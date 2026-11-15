@@ -2,9 +2,33 @@
 
 This guide covers the judging criteria, the content for each slide, sample scripts, presentation guidelines, and likely questions.
 
-Slide copy and speaker scripts are ready to use. The accompanying notes explain how to build and present the deck.
+Use the seven-slide outline for the short presentation and the detailed notes for speaker scripts and supporting evidence. Fill in the remaining experiment placeholders before using the corresponding slides.
 
-Fill in each `[__]` placeholder after the final or once the corresponding experiment finishes.
+## Seven-slide presentation
+
+The challenge asks for 5–10 slides or a short video. This outline uses three ideas with recorded margin and on-time comparisons. For each idea, show what the desk does and when, the observation that prompted the change, and the measured effect.
+
+1. **We earned €19,965 and finished in the top 5 of 58 ranked teams.** Open with the final result from one level-8 week, with 512 orders and 94.4% on time. Give the best ranking result (**€96,850 across five secret weeks, 2nd of 55 ranked teams**) and name the three ideas on slides 3–5.
+2. **A request becomes a quote, then a gig.** Use the five-box diagram in slide 2 of the detailed notes. Show how expected cost sets a floor, how the dealer's likely response shapes the quote, and how the desk chooses a fee if the request is won.
+3. **A 10% margin floor earned €809 more per week.** A flatter demand curve fit dealer responses worse and raised profit, pointing to scarce drivers. Show both margins and on-time shares from the 117 unseen weeks in the table below.
+4. **Resetting the fee after the last pickup earned €864 more per week.** Before the change, about 15 cars per week found drivers after their last pickup and still paid 1.6× the typical fee. Show both results from the eight tuning weeks.
+5. **Pairing earned €699 more per week and reduced on-time share.** Show when two cars can share a gig and use the two-week v4.2 comparison below. In the speaker notes, explain why the desk later added a pickup readiness check.
+6. **The desk recovered from a deliberate restart.** In the test final, it missed 0 of 1,030 requests. The event history restored orders and gigs, and the journal supplied data for rebuilding dealer price estimates.
+7. **Driver shortages can put the week near the cutoff.** A batch of 18 cars on one long lane found just one driver in time, and the week ended at 90.0% on time. In eight tuning weeks, a 1.4× urgent fee earned €505 less per week than 1.6×. Explain that we still cannot fully account for the gains from a flatter dealer demand curve after adding the margin floor.
+
+### Verified paired results
+
+Each row compares the two configurations on the same weeks. Margin is measured in euros per week, and on-time share applies to orders.
+
+| Idea | Same weeks | Without the idea | With the idea | Change |
+|---|---|---|---|---|
+| 10% margin floor | 117 unseen weeks | €16,893 · 95.1% | €17,702 · 95.7% | +€809 per week · +0.6 percentage points |
+| Fee reset after the last pickup | 8 tuning weeks | €15,551 · 94.6% | €16,415 · 95.2% | +€864 per week · +0.6 percentage points |
+| Two cars per gig | 2 practice weeks (`test-1`, `test-2`), v4.2 | €9,110 · 97.1% | €9,809 · 96.5% | +€699 per week · −0.6 percentage points |
+
+The pairing row measures the early v4.2 toggle. The later pickup readiness check contributed a separate **+€811 per week** on eight tuning weeks. [Experiment log](../research/EXPERIMENT_LOG.md)
+
+The model-selected opening fee and dealer price gaps have recorded margin gains of **€1,400** and **€1,168** per tuning week respectively. Use them in the decision diagram, and add a dedicated idea slide when the paired on-time shares are available. [Experiment log](../research/EXPERIMENT_LOG.md)
 
 ---
 
@@ -82,21 +106,19 @@ Make **one claim per slide** and show the evidence for it. Use a full sentence w
 
 ### Slide 1 · Lead with the result
 
-**Title** `Price what a car really costs: €[__] in the final`
+**Title** `€19,965 in the final and top 5 of 58 ranked teams`
 
 **Slide copy**
 
-- Final: `€[__] margin, [__]% on time, place [__] of [__]`
+- Final: `€19,965 margin in one level-8 week, 512 orders, 94.4% on time against a 90% minimum`
 - Best ranking round: `€96,850 for five secret weeks, place 2 of 55 ranked teams (Saturday 21:00)`
-- Latest round: `€79,317 for five secret weeks (Sunday 03:00), against €56,128 for the organizers' best system and −€362,463 for their starter kit`
-- Practice: `€17,702 a week on 117 level-8 weeks the desk had never played (± 386). All 117 ranked, 95.7% of orders on time.`
 - Give each of the three ideas one line with its measured effect.
-  - `A car costs more than its fee: +€809 a week (± 121)`
-  - `Late is late: +€453 a week (± 68)`
-  - `One fee per gig, from a model of our own weeks: +€1,400 a week`
+  - `A 10% margin floor earned €809 more per week on 117 unseen weeks.`
+  - `Resetting the fee after the last pickup earned €864 more per week on eight tuning weeks.`
+  - `Pairing earned €699 more per week in an early two-week test, with on-time share down 0.6 percentage points.`
 
 **Speaker script (20 seconds)**
-"Our desk earned [__] euros in the final. It runs on one idea: a car costs more than the fee we pay its driver. It costs the fee, the risk that it arrives late, and the driver it takes from our other cars. Three ideas follow from that, and we measured each one on the same weeks."
+"We earned €19,965 in the final and placed in the top five of 58 ranked teams. We won 512 orders and delivered 94.4% on time. Each car costs us the fee, the risk of arriving late, and the driver it takes from our other cars. We used that to decide which requests to win, what fee to pay, and when two cars could share a gig."
 
 The rules say "Start with the answer." Put the results before team introductions.
 
@@ -234,7 +256,7 @@ Close with this line. `The typical fee is a threshold. Under it, cars wait and a
 **The effect:**
 - `14 to 21% of cars travel in a two-car gig`
 - `0.80 to 0.83 × the typical fee per car, against 0.94 to 0.99 × for a car alone`
-- `Without pairs, same weeks: [€__ a week, __% on time]`
+- `On two v4.2 practice weeks, pairing increased margin from €9,110 to €9,809 per week. The on-time share fell from 97.1% to 96.5%.`
 
 **Callout for the bug the data revealed** `17 gigs paired a car that was not ready yet with a car due earlier. 18 cars arrived 14 to 89 hours late. One check now refuses such pairs: +€811 a week.`
 
@@ -297,12 +319,13 @@ The rules say "A team that shows its limits is easier to trust." If time is shor
 | Rule | How to apply it |
 |---|---|
 | Start with the answer | Put the result and three ideas on slide 1. Skip "About us" and "Agenda" slides. |
-| One idea on a slide | Write the title as **a claim with a number**. Use the body to support that claim. |
-| Give each figure a unit and a comparison | Write `€17,578 a week, against €16,415 without it, on the same 8 weeks`. |
-| Show how it decides | Use formulas, rules, and diagrams. Skip code screenshots. |
-| Use the challenge vocabulary | Dealer, request, gig, fee, typical fee, deadline, list price, option. See Section 4.2. |
+| One idea on a slide | Write the title as a claim and put its evidence on the same slide. |
+| Give each figure a unit and a comparison | For each idea, label margin in €/week and on-time share in percent. Show both settings, the level, and the number of shared weeks. |
+| Show how it decides | Use a decision rule, a formula, or the request-to-gig diagram. |
+| Use the challenge vocabulary | Use dealer, request, gig, fee, typical fee, and deadline. See Section 4.2. |
 | Cut what does not help | Leave out slogans, long lists, and decorative logos. |
-| Say what did not work | Slide 9. |
+| Say what failed and what remains unknown | Give a measured failed experiment and state one limit or open question. |
+| Read every line yourself | Explain what each claim and comparison means aloud. Remove any line you cannot explain, including agent-written copy. |
 
 ### 4.2 Terminology
 
@@ -327,14 +350,14 @@ The rules say "A team that shows its limits is easier to trust." If time is shor
 
 ### 4.4 What to cut when time is short
 
-1. Combine slide 7 (pairing) and slide 6 into "Dealers and pairs."
-2. Replace the calibration table on slide 6 with one sentence.
-3. **Keep slides 1, 2, 3, 8, and 9.**
+Use the seven-slide outline above. Move the calibration table and fee model details to the speaker notes if the decision diagram covers what the jury needs to follow.
 
 ### 4.5 Submission checklist
 
 - [ ] Each figure has a unit and a comparison.
 - [ ] Every figure can be traced to `sweeps.jsonl`, `board.py`, or the experiment log.
+- [ ] Each idea slide makes one claim and compares margin and on-time share on the same weeks.
+- [ ] The deck covers a failed experiment and a limit or open question.
 - [ ] Fill in every `[__]` placeholder.
 - [ ] The presenter reads each line aloud and removes any line they cannot explain.
 - [ ] Include 5 to 10 slides.
@@ -347,13 +370,13 @@ The rules say "A team that shows its limits is easier to trust." If time is shor
 
 ### 5.1 60-second version
 
-"Our desk runs on one idea: a car costs more than the fee we pay its driver. It costs the fee, the risk of arriving late, and the driver it takes from our other cars.
+"We earned €19,965 in the final and placed in the top five of 58 ranked teams, with 512 orders and 94.4% on time. Each car costs us the fee, the risk of arriving late, and the driver it takes from our other cars.
 
-We found this through a paradox. A wrong demand curve earned more than the right one. The reason was that drivers, not dealers, are the scarce side. So every order must earn ten percent above its cost. That alone is worth eight hundred euros a week.
+We saw that a flatter demand curve fit dealer responses worse and earned more. Drivers were scarce. A ten percent margin floor helped us win fewer orders and earn €809 more per week across 117 unseen weeks.
 
-The second idea: a car that can no longer be on time stops paying the urgent fee. The third: each gig gets the one fee where fee plus risk is smallest, from a model of our own weeks.
+When a car passes its last pickup, we reset the gig to the typical fee. We also pair cars when both can be picked up in time and the second starts near where the first ends.
 
-We tuned on eight weeks and then played one hundred and seventeen new ones once: seventeen thousand seven hundred euros a week, all ranked. In the final we earned [__]."
+Across the 117 unseen weeks, we averaged €17,702 per week, and every week ranked."
 
 ### 5.2 Four-minute version
 
@@ -416,6 +439,16 @@ If one person presents, they should read Sections 2 and 6 three times.
 
 | Missing figure | Source |
 |---|---|
-| Final result | The `End` line in `final.log` and the final leaderboard |
-| Menu disabled and pairing disabled | `python sweep.py --summary tag=deck`, if the runs finish in time |
+| Paired on-time shares for the opening-fee model and the dealer price-gap change | Recover the original tuning sweep records with both configurations present for all eight weeks. |
+| Menu and pairing effects on the final build | Run the paired practice sweep below. |
 | Ranked teams in the Sunday 03:00 round | `python board.py` |
+
+Run from `engine/` with the organizers' kit and practice credentials. Use a fresh tag for each sweep.
+
+```bash
+python sweep.py --level 8 --seeds pitch-1:16 "tag=pitch" "tag=pitch,menu=false" "tag=pitch,pairs=false"
+python weeks.py "tag=pitch" "tag=pitch,menu=false" "tag=pitch,pairs=false"
+python sweep.py --summary tag=pitch
+```
+
+Confirm that each variant has all 16 weeks in common with the baseline before copying the mean margin and mean on-time share from the summary.

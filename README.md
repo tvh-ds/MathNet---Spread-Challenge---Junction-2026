@@ -8,10 +8,14 @@ A dispatch desk for the Spread world at level 8. One idea runs through it:
 
 | | |
 |---|---|
-| The final | to be filled in after 09:35 Helsinki |
+| The final | €19,965 margin in one level-8 week, 512 orders, 94.4% on time, top 5 of 58 ranked teams |
 | Best ranking round | €96,850 for five secret weeks, place 2 of 55 ranked teams (Saturday 21:00) |
 | Latest ranking round | €79,317 for five secret weeks (Sunday 03:00), against €56,128 for the organizers' best system and −€362,463 for their starter kit |
 | Practice | €17,702 a week (± 386) on 117 level-8 weeks the desk had never played. All 117 ranked, 95.7% of orders on time |
+
+## Presentation
+
+The [pitch notes](docs/presentation/PITCH_NOTES.md#seven-slide-presentation) give a seven-slide outline and show margin and on-time share with and without each featured idea on the same practice weeks. The [final strategy ranking](strategy.md) covers the wider set of changes.
 
 ## How the desk decides
 
