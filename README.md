@@ -1,1 +1,1 @@
-# MathNet---Spread-Challenge---Junction-2026
+# MathNet-Spread-Challenge-Junction-2026
