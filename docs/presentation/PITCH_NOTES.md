@@ -1,4 +1,4 @@
-# MathNet1 · Spread: key notes thuyết trình và hướng dẫn làm slides
+# Spread: key notes thuyết trình và hướng dẫn làm slides
 
 Bản này KHÔNG phải slides. Nó là: (1) giám khảo muốn thấy gì, (2) nội dung từng slide để team tự dựng, (3) lời nói mẫu, (4) hướng dẫn trình bày, (5) câu hỏi dễ gặp.
 
@@ -88,7 +88,7 @@ Mỗi slide: **một khẳng định + bằng chứng của nó.** Tiêu đề l
 
 - Final: `€[__] margin, [__]% on time, place [__] of [__]`
 - Best ranking round: `€96,850 for five secret weeks, place 2 of 55 ranked teams (Saturday 21:00)`
-- Latest round: `€79,317 for five secret weeks (Sunday 03:00), against €56,128 for the house's best system and −€362,463 for the house starter`
+- Latest round: `€79,317 for five secret weeks (Sunday 03:00), against €56,128 for the organizers' best system and −€362,463 for their starter kit`
 - Practice: `€17,702 a week on 117 level-8 weeks the desk had never played (± 386). All 117 ranked, 95.7% of orders on time.`
 - Ba ý, mỗi ý một dòng kèm hiệu quả:
   - `A car costs more than its fee: +€809 a week (± 121)`
@@ -281,7 +281,7 @@ Một dòng kết luận: `The typical fee is a threshold. Under it, cars wait a
 - `In weeks where every team earns most, we earned less than teams we beat overall (Sunday 03:00, week 4: €17,532 against €19,000 to €22,400). We found the cause on Sunday morning: after two days with 30 late cars, our own price of a late order rose from under €100 to €2,463, and the desk declined 41% of Wednesday's requests.` [THÊM 1 CÂU VỀ `ease` SAU KHI CÓ KẾT QUẢ THỬ]
 - `Slope 12 earns more than the best-fitting 16. With the margin floor in the cost, we no longer know why.`
 
-**Cuối slide · Sources and credits:** `Our practice runs tested driver capacity, fee timing, and pickup readiness for paired gigs. We also tested direct offers and left them out. The dealer-note reader is used under the MIT licence. Claude wrote most of the code and analysis. We chose what to test and what to keep.` [Nhật ký thí nghiệm](../research/NHAT_KY_THI_NGHIEM.md) · [Giấy phép bộ đọc ghi chú](../../engine/notes_exactum.py)
+**Cuối slide · Sources and credits:** `Our practice runs tested driver capacity, fee timing, and pickup readiness for paired gigs. We also tested direct offers and left them out. The dealer-note reader is used under the MIT licence. Claude wrote most of the code and analysis. We chose what to test and what to keep.` [Nhật ký thí nghiệm](../research/NHAT_KY_THI_NGHIEM.md) · [Giấy phép bộ đọc ghi chú](../../engine/notes_reader.py)
 
 **Lời nói (25 giây):**
 "Three honest limits. First, one week in a hundred and seventeen ended at exactly ninety percent: one dealer sent eighteen cars to one far town, and one found a driver in time. We looked for a general rule and found none, so we added a simple cap. Second, in the richest weeks, teams we beat overall earned more than we did. This morning we found why: after two bad days, our own price of lateness made the desk decline four requests in ten. Third, a flatter demand curve still earns more than the true one, and we cannot fully explain it."

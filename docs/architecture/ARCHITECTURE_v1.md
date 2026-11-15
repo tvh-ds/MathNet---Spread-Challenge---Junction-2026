@@ -1,6 +1,6 @@
 # Architecture
 
-How the MathNet1 desk is built: the parts, what each one decides, and how a week flows through them.
+How the dispatch desk is built: the parts, what each one decides, and how a week flows through them.
 The README says what the desk earns; this file says how it works.
 
 ## 1. The parts
@@ -17,7 +17,7 @@ flowchart LR
     W(("Spread world")) -- events --> D["Desk<br/>dispatch.py"]
     D -- "quote, post, withdraw" --> W
     A["Atlas<br/>world.py"] --> D
-    N["Note reader<br/>notes_exactum.py"] --> D
+    N["Note reader<br/>notes_reader.py"] --> D
     M --> D
     P --> D
     D -- journal --> J[("journal/&lt;world&gt;.jsonl")]
@@ -29,7 +29,7 @@ flowchart LR
 |---|---|---|---|
 | Desk | `dispatch.py` (`Desk`, about 800 lines) | Orders, gigs, fee schedules, beliefs about dealers, timers | Every quote, every gig, every fee |
 | Atlas | `world.py` (`Atlas`) | Roads, driving times, opening hours, where drivers live | Nothing: it answers questions (when is the last pickup, how many drivers are near) |
-| Note reader | `notes_exactum.py` | Rules for dealer notes (MIT licence) | Nothing: it turns a note into ready time, deadline, plates, manual licence |
+| Note reader | `notes_reader.py` | Rules for dealer notes (MIT licence) | Nothing: it turns a note into ready time, deadline, plates, manual licence |
 | Model | `model.json` (made by `fit.py`) | Weights of the on-time model, the fee-paid model, the dealers' curve | Nothing: the desk reads it |
 | Params | `Params` in `dispatch.py` | Every number the desk uses, each with the measurement that chose it | Nothing: each is a switch or a constant |
 | Kit starter | `spread/starter.py` | The event loop, orders, legs, gigs, retries, restart | The desk inherits from its `Desk` and overrides the decisions |
@@ -162,7 +162,7 @@ flowchart TD
 | `world.py` | `Atlas`: map, hours, drivers; `signs()` for the on-time model; `with_fee()` |
 | `fit.py` | Fits `model.json` from saved weeks |
 | `model.json` | The fitted models |
-| `notes_exactum.py` | Dealer-note reader, used unchanged under its [MIT licence](../../engine/notes_exactum.py). Our pairing experiments tested the readiness check that uses its output. |
+| `notes_reader.py` | Dealer-note reader, used unchanged under its [MIT licence](../../engine/notes_reader.py). Our pairing experiments tested the readiness check that uses its output. |
 | `sweep.py` | Many configurations on many seeds, 8 weeks at a time; `--summary` for paired tables |
 | `weeks.py` | Week-by-week comparison of two configurations |
 | `night.py`, `tonight.sh` | An unattended night of paired tests |

@@ -1,4 +1,4 @@
-"""Spread dispatcher, team MathNet1.
+"""Spread dispatcher.
 
 One idea runs through the desk: a car costs its fee plus its risk.
 
@@ -10,9 +10,8 @@ One idea runs through the desk: a car costs its fee plus its risk.
   minimum  The 90% delivery minimum is a price, not a rule: a late order costs almost nothing while we
            expect far fewer late orders than we allow ourselves, and a lot near that share.
 
-world.py holds the facts of a world (roads, opening hours, where drivers live). notes_exactum.py is the
-dealer-note reader of team EX-ACTUM, used unchanged under its MIT licence. Orders, gigs, the two loops and
-the restart are the kit starter's.
+world.py holds the facts of a world (roads, opening hours, where drivers live). notes_reader.py parses
+dealer notes under its MIT licence. Orders, gigs, the two loops and the restart are the kit starter's.
 
     python dispatch.py --level 8 --seed test-1
     python dispatch.py --level 8 --seed test-1 --param on_time=0.95 --param look_h=0
@@ -37,7 +36,7 @@ import spread.starter as starter
 from spread.starter import DAY, HOUR
 from spread.types import DeliveryOption, FeeStep, Order, PriceRequest, StopRef
 
-from notes_exactum import parse_note
+from notes_reader import parse_note
 from world import PLATES, Atlas, crow_km, first_open, last_open, open_span, with_fee, work_after, work_before
 
 END = 9 * DAY + 22 * HOUR  # the world ends on the second Wednesday at 22:00

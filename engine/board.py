@@ -1,14 +1,14 @@
-"""The practice rankings at level 8: the round before and the round that is open, with the first teams and ours: the margin of each week,
-the orders a week and the margin an order (how the teams ahead earn theirs: by volume or by margin).
+"""The previous and current level-8 practice rankings, showing weekly margin, orders and margin per order
+for the top teams and any team matching the optional name fragment.
 
     python board.py              # only reads the rankings; plays nothing
-    python board.py MathNet 20   # our name (any part of it) and how many teams to list
+    python board.py "<team-name>" 20  # name fragment and how many top teams to list
 """
 import sys
 
 from spread.client import Client
 
-name = (sys.argv[1] if len(sys.argv) > 1 else "mathnet").lower()
+name = sys.argv[1].lower() if len(sys.argv) > 1 else None
 shown = int(sys.argv[2]) if len(sys.argv) > 2 else 15
 board = Client().board(8)
 for which in ("previous", "current"):
@@ -20,7 +20,7 @@ for which in ("previous", "current"):
     done = [team for team in ranked if team["played"] >= 5]
     print(f"\n{which}: {season['name']} (started {season['startedAt']}): {len(teams)} teams, {len(ranked)} ranked, {len(done)} with five weeks")
     for team in teams:
-        ours = name in team["name"].lower()
+        ours = name is not None and name in team["name"].lower()
         if not ours and not (team["rank"] and team["rank"] <= shown):
             continue
         runs = sorted(team["runs"], key=lambda run: run["run"])

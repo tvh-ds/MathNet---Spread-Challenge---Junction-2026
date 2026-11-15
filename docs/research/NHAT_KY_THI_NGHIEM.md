@@ -1,4 +1,4 @@
-# MathNet1 · Spread: nhật ký thí nghiệm
+# Spread: nhật ký thí nghiệm
 
 Mỗi dòng là một lượt chạy trên máy chủ, hoặc một phép phân tích trên các tuần đã lưu. Với mỗi lượt: **đổi gì → thấy gì → quyết định gì → thuộc ý nào.**
 
@@ -25,7 +25,7 @@ Giờ là giờ Việt Nam. Số tiền là € lợi nhuận mỗi tuần, cấ
 | 8 tuần dùng để chỉnh (halal-09 đến 16) | €17.704 |
 | 117 tuần chưa từng chơi (bản đêm thứ Bảy) | €17.702 ± 386, 95,7% đúng hạn, 117/117 có hạng |
 | Vòng xếp hạng tốt nhất | €96.850, hạng 2/55 (thứ Bảy 21:00 Helsinki) |
-| Vòng gần nhất | €79.317 (Chủ nhật 03:00); House best €56.128; House starter −€362.463 |
+| Vòng gần nhất | €79.317 (Chủ nhật 03:00); hệ thống tốt nhất của ban tổ chức €56.128; bản khởi đầu −€362.463 |
 
 ---
 
@@ -136,8 +136,8 @@ Tuần thử: 8 tuần halal-09 đến 16. Mốc: v4.9e = 15.551.
 | Vòng (giờ Helsinki) | Bản | Từng tuần | Tổng | Hạng | Ghi chú |
 |---|---|---|---|---|---|
 | Thứ Bảy 18:00 | v4.9e hoặc f | | €82.454 | 3 / 67 | Hạng 1: €94.445 |
-| Thứ Bảy 21:00 | v4.9h | 19.345 / 20.581 / 18.801 / 20.537 / 17.586 | €96.850 | 2 / 55 | Hạng 1 Juhus €105.424. Yếu ở tuần 2 và 4 |
-| Chủ nhật 03:00 | v4.9k mặc định | 16.830 / 15.967 / 10.992 / 17.532 / 17.995 | €79.317 | khoảng 5 / 48 | Hạng 1 Progresful €88.416. House best €56.128 |
+| Thứ Bảy 21:00 | v4.9h | 19.345 / 20.581 / 18.801 / 20.537 / 17.586 | €96.850 | 2 / 55 | Hạng 1: €105.424. Yếu ở tuần 2 và 4 |
+| Chủ nhật 03:00 | v4.9k mặc định | 16.830 / 15.967 / 10.992 / 17.532 / 17.995 | €79.317 | khoảng 5 / 48 | Hạng 1: €88.416. Hệ thống tốt nhất của ban tổ chức: €56.128 |
 | Chủ nhật 06:00 | bản chốt | *chưa chơi* | | | Tổng duyệt cho final |
 
 ---

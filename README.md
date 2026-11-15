@@ -1,4 +1,4 @@
-# MathNet1 · Spread (Bahn challenge, Junction 2026)
+# Spread dispatch desk (Bahn challenge, Junction 2026)
 
 A dispatch desk for the Spread world at level 8. One idea runs through it:
 
@@ -10,7 +10,7 @@ A dispatch desk for the Spread world at level 8. One idea runs through it:
 |---|---|
 | The final | to be filled in after 09:35 Helsinki |
 | Best ranking round | €96,850 for five secret weeks, place 2 of 55 ranked teams (Saturday 21:00) |
-| Latest ranking round | €79,317 for five secret weeks (Sunday 03:00), against €56,128 for the house's best system and −€362,463 for the house starter |
+| Latest ranking round | €79,317 for five secret weeks (Sunday 03:00), against €56,128 for the organizers' best system and −€362,463 for their starter kit |
 | Practice | €17,702 a week (± 386) on 117 level-8 weeks the desk had never played. All 117 ranked, 95.7% of orders on time |
 
 ## How the desk decides
@@ -89,7 +89,7 @@ Tuned on 8 weeks: €17,704 a week. Played once on 117 new weeks: €17,702.
 | `world.py` | The facts of a world: roads, opening hours, where drivers live, and the signs the fee model reads |
 | `fit.py` | Fits `model.json` from saved weeks: the on-time model, the fee paid in the end, the dealers' curve |
 | `model.json` | The fitted model the desk plays with |
-| `notes_exactum.py` | The MIT-licensed dealer-note reader used in pickup and pairing decisions |
+| `notes_reader.py` | The MIT-licensed dealer-note reader used in pickup and pairing decisions |
 | `sweep.py`, `weeks.py` | Many configurations on many seeds, and the paired comparison week by week |
 | `night.py` | A night of sweeps that takes nothing unless a change clears its noise |
 | `final.sh`, `check_final.py` | The final with a restart loop, and a check of what the desk answered in time |

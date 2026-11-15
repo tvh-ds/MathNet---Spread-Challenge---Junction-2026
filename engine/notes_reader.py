@@ -1,6 +1,3 @@
-# Dealer-note reader from the EX-ACTUM team's public repository, used unchanged under its MIT licence:
-# https://github.com/KasperiBlomberg/EX-ACTUM-BAHN (spread_bot/notes.py)
-#
 # MIT License
 #
 # Copyright (c) 2026 Kasperi Blomberg

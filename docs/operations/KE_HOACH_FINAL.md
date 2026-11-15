@@ -1,4 +1,4 @@
-# MathNet1 · Spread: kế hoạch ngày final
+# Spread: kế hoạch ngày final
 
 Viết lúc 11:00 VN, Chủ nhật 15/11. Mọi giờ dưới đây là **giờ Việt Nam** (Helsinki + 5 tiếng).
 
@@ -20,11 +20,11 @@ Hệ quả cho kế hoạch:
 
 ### 2.1 Tổng 5 tuần: hạng 2 đến 4
 
-| Vòng (giờ Helsinki) | MathNet1 | Hạng | Hạng 1 | Hạng 10 |
+| Vòng (giờ Helsinki) | Ta | Hạng | Hạng 1 | Hạng 10 |
 |---|---|---|---|---|
 | Thứ Bảy 18:00 | €82.454 | 3 / 67 | €94.445 | €75.405 |
-| Thứ Bảy 21:00 | €96.850 | 2 / 55 | €105.424 (Juhus) | €86.201 |
-| Chủ nhật 03:00 | €79.317 | khoảng 5 / 48 | €88.416 (Progresful) | €76.873 |
+| Thứ Bảy 21:00 | €96.850 | 2 / 55 | €105.424 | €86.201 |
+| Chủ nhật 03:00 | €79.317 | khoảng 5 / 48 | €88.416 | €76.873 |
 
 ### 2.2 Từng tuần: không ổn định
 
@@ -38,19 +38,19 @@ Final chỉ là **một tuần**. Hạng của ta theo từng tuần ở vòng C
 | 4 | 17.532 | 20.920 | 19.636 | **15** |
 | 5 | 17.995 | 19.346 | 17.077 | 4 |
 
-- 5 đội mạnh chưa chơi vòng đó (Juhus, Progresful, Edge101, Team Moonshot, DaVinci's Night Shift). Cộng họ vào thì mỗi hạng trên lùi thêm 3 đến 5 bậc.
+- 5 đội mạnh chưa chơi vòng đó. Cộng họ vào thì mỗi hạng trên lùi thêm 3 đến 5 bậc.
 - Ước lượng thẳng thắn (với bản sáng nay): xác suất ta vào top 10 trong một tuần bất kỳ khoảng **55 đến 70%**. Vòng thứ Bảy 21:00 thì cả 5 tuần ta đều trong top 8.
-- Mốc so sánh từ ban tổ chức, cùng 5 tuần đó: House best €56.128, House starter −€362.463.
+- Mốc so sánh từ ban tổ chức, cùng 5 tuần đó: hệ thống tốt nhất €56.128, bản khởi đầu −€362.463.
 
 ### 2.3 Các đội đầu bảng kiếm tiền kiểu khác ta
 
 | Đội | Đơn mỗi tuần | € mỗi đơn |
 |---|---|---|
-| Juhus | 473 | 43,3 |
-| Progresful | 464 | 41,4 |
-| Seekers | 402–416 | 42,5–45,5 |
-| Edge101 | 417 | 43,9 |
-| **MathNet1** | **458–526** | **34,6–36,8** |
+| Đối thủ A | 473 | 43,3 |
+| Đối thủ B | 464 | 41,4 |
+| Đối thủ C | 402–416 | 42,5–45,5 |
+| Đối thủ D | 417 | 43,9 |
+| **Ta** | **458–526** | **34,6–36,8** |
 
 Họ lấy ít đơn hơn và lãi nhiều hơn trên mỗi đơn. Ta lấy nhiều đơn, lãi mỏng hơn. Ở tuần "giàu" (tuần 4), cách của họ thắng rõ: ta nhận 275 đơn trong hai ngày đầu, đến thứ Tư tỷ lệ đúng hạn rơi xuống 87,2%.
 
@@ -79,7 +79,7 @@ Cấu hình sẽ chạy final nếu `ease` không vượt quy tắc: bản chố
 
 | Giờ | Việc | Ai |
 |---|---|---|
-| 11:00–11:20 | Dán `weeks.py`, `board.py house 3`, dòng tổng kết; scp file tuần xếp hạng | Triết |
+| 11:00–11:20 | Dán `weeks.py`, `board.py "<tên hệ thống chuẩn>" 3`, dòng tổng kết; scp file tuần xếp hạng | Triết |
 | 11:00–12:15 | Dựng slides theo `PITCH_NOTES.md` | Thành viên làm slides |
 | 11:20–12:00 | Đọc kết quả, mổ tuần 4, quyết định `lane_cap` | Claude |
 | 12:00–12:15 | Chơi vòng xếp hạng cuối (5 tuần, trong tmux, không Ctrl-C) | Triết |
@@ -128,9 +128,9 @@ Quy chế: khi bot dừng, request chuyển sang đối thủ và tài xế vẫ
 ## 6. Bài nộp (trước 15:00)
 
 - [ ] **Submission hash**: lấy ở trang team. Chép sẵn vào một file từ 13:30.
-- [ ] **Link code**: repo public. Trong repo: `dispatch.py`, `world.py`, `fit.py`, `model.json`, `notes_exactum.py` (giữ nguyên header MIT), `sweep.py`, `weeks.py`, `night.py`, `final.sh`, `check_final.py`, `replay_test.py`, `restart_test.py`, `README.md`. **Không** đưa `.env`, `runs/`, `.venv/`.
+- [ ] **Link code**: repo public. Trong repo: `dispatch.py`, `world.py`, `fit.py`, `model.json`, `notes_reader.py` (giữ nguyên header MIT), `sweep.py`, `weeks.py`, `night.py`, `final.sh`, `check_final.py`, `replay_test.py`, `restart_test.py`, `README.md`. **Không** đưa `.env`, `runs/`, `.venv/`.
 - [ ] **Slides**: 5 đến 10 slide, PDF. Phương án dự phòng nếu không kịp dựng mới: bộ slides Claude dựng hôm thứ Bảy vẫn còn, chỉ thiếu 4 con số.
-- [ ] Trong slides và README, dẫn [nhật ký thí nghiệm](../research/NHAT_KY_THI_NGHIEM.md) cho các quyết định về nguồn tài xế, mốc sáu giờ và chào trực tiếp. Dẫn [thông tin nguồn và giấy phép MIT của bộ đọc ghi chú](../../engine/notes_exactum.py). Ghi công Claude viết phần lớn code và phân tích.
+- [ ] Trong slides và README, dẫn [nhật ký thí nghiệm](../research/NHAT_KY_THI_NGHIEM.md) cho các quyết định về nguồn tài xế, mốc sáu giờ và chào trực tiếp. Dẫn [thông tin bản quyền và giấy phép MIT của bộ đọc ghi chú](../../engine/notes_reader.py). Ghi công Claude viết phần lớn code và phân tích.
 
 ## 7. Kịch bản
 

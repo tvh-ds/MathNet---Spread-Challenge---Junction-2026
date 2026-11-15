@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-- `dispatch.py` is the entry point. `world.py` handles routing, hours, and model inputs. `notes_exactum.py` parses dealer notes. `model.json` holds fitted parameters, and `map.json` supports offline tools.
+- `dispatch.py` is the entry point. `world.py` handles routing, hours, and model inputs. `notes_reader.py` parses dealer notes. `model.json` holds fitted parameters, and `map.json` supports offline tools.
 - `fit.py`, `sweep.py`, and `weeks.py` fit models and compare experiments. `replay_test.py` and `restart_test.py` are standalone checks. `dispatch_v1.py` through `dispatch_v3x.py` are historical versions.
 - Start with `README.md` and `ARCHITECTURE_v1.md`. `NHAT_KY_THI_NGHIEM.md` records research, strategy changes, and results. `KE_HOACH_FINAL.md` covers final-day operations, and `PITCH_NOTES.md` holds presentation notes.
 
@@ -23,4 +23,4 @@ Pass an existing saved week to `python replay_test.py runs/<saved-week>.json.gz`
 
 ## Local Changes and Git
 
-The current reorganization is local and move-only. Keep code contents intact and move path-dependent engine files together. Use concise, descriptive commit subjects, following the existing `MathNet1 Spread desk: build frozen for the final` subject. Keep branches and commits local. Pushing to `buihin2007/Spread-Mathnet-` is prohibited, and pull requests are outside this workflow.
+The current reorganization is local and move-only. Keep code contents intact and move path-dependent engine files together. Use concise, descriptive commit subjects. Keep branches and commits local. Pushing to the original upstream (`origin`) is prohibited, and pull requests are outside this workflow.
