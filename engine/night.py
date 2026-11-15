@@ -49,9 +49,9 @@ def play(jobs: list, until: float) -> None:
     with ThreadPoolExecutor(8) as pool:
         for done, result in enumerate(pool.map(one, jobs), 1):
             if result and "error" in result:
-                print(f"  LOI {result['config']} {result['seed']}: {' | '.join(result['error'])}", flush=True)
+                print(f"  ERROR {result['config']} {result['seed']}: {' | '.join(result['error'])}", flush=True)
             if done % 40 == 0:
-                print(f"  {time.strftime('%H:%M')}  {done}/{len(jobs)} luot", flush=True)
+                print(f"  {time.strftime('%H:%M')}  {done}/{len(jobs)} runs", flush=True)
 
 
 def weeks(tag: str) -> dict:
@@ -85,7 +85,7 @@ def chosen() -> list:
             mean, error, count = gain(rows, base)
             low = lambda played: sum(week["on_time"] < LOWEST or not week["ranked"] for seed, week in played.items() if seed in rows and seed in base)
             safe = low(rows) <= low(base)  # no more weeks near the 90% line than the base has on the same weeks
-            print(f"  {family:<10} {change:<28} {count:>3} tuan  {mean:>+7,.0f} +-{error:>5,.0f}  thap nhat {min((week['on_time'] for week in rows.values()), default=0):.1f}%{'' if safe else '  (khong an toan)'}")
+            print(f"  {family:<10} {change:<28} {count:>3} weeks  {mean:>+7,.0f} +-{error:>5,.0f}  lowest {min((week['on_time'] for week in rows.values()), default=0):.1f}%{'' if safe else '  (fails safety check)'}")
             if safe and mean >= max(250.0, 1.5 * error) and (best is None or mean > best[0]):
                 best = (mean, change)
         taken += [best[1]] if best else []
@@ -98,16 +98,16 @@ def main() -> None:
     start = time.time()
     end = start + total * 3600
     changes = [[]] + [[change] for members in FAMILIES.values() for change in members]
-    print(f"{time.strftime('%H:%M')}  Giai doan 1: {len(changes)} cau hinh, {hours} gio; dung han sau {total} gio", flush=True)
+    print(f"{time.strftime('%H:%M')}  Stage 1: {len(changes)} configurations for {hours} hours (no new runs after {total} hours)", flush=True)
     play([(name("night", change), 8, f"night-{seed}") for seed in range(1, 121) for change in changes], min(end, start + hours * 3600))
-    print(f"\n{time.strftime('%H:%M')}  Giai doan 1 xong:", flush=True)
+    print(f"\n{time.strftime('%H:%M')}  Stage 1 complete:", flush=True)
     try:
         sweep.summary(["tag=night"])
         taken = chosen()
     except Exception as error:  # the night goes on with what it has
-        print(f"  khong chon duoc: {error!r}", flush=True)
+        print(f"  selection failed: {error!r}", flush=True)
         taken = []
-    print(f"\n{time.strftime('%H:%M')}  Giai doan 2: giu {taken or 'khong thay doi nao'}", flush=True)
+    print(f"\n{time.strftime('%H:%M')}  Stage 2 keeps {taken or 'no changes'}", flush=True)
     if not taken:  # nothing earned its place: more weeks of stage 1 say more than a second stage of the base alone
         play([(name("night", change), 8, f"night-{seed}") for seed in range(121, 400) for change in changes], end)
     else:
@@ -115,7 +115,7 @@ def main() -> None:
         with open("night_choice.json", "w", encoding="utf-8") as out:
             json.dump({"taken": taken, "configs": [name("dawn", changes) for changes in finals]}, out, indent=1)
         play([(name("dawn", changes), 8, f"dawn-{seed}") for seed in range(1, 600) for changes in finals], end)
-    print(f"{time.strftime('%H:%M')}  Het gio: khong con gi chay.", flush=True)
+    print(f"{time.strftime('%H:%M')}  Time is up. All runs have ended.", flush=True)
 
 
 if __name__ == "__main__":

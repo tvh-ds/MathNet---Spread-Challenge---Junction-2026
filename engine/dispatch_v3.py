@@ -1,16 +1,16 @@
-"""Bot cua doi: starter cua kit, doi cac quyet dinh ve gia va phi.
+"""Team bot. Uses the starter kit with changes to pricing and fees.
 
-v2 (bat bang --param learn=true): hoc muc gia dealer chap nhan ngay trong tuan, tu moi lan thang/thua,
-roi bao muc gia co lai ky vong cao nhat. Xe it thoi gian du bi tinh them chi phi rui ro tre.
+v2 (--param learn=true) learns the price dealers accept during the week from each win or loss.
+It quotes the price with the highest expected profit and charges for the lateness risk of cars with little slack.
 
-v1 (mac dinh): ba quyet dinh co dinh:
+v1 (default) uses three fixed rules.
 
-1. Bao gia: mot boi so cua list price cho moi option du an toan; xe rui ro thi tu choi.
-2. Phi tai xe: mot muc co dinh cho moi gig (khong tang dan, de tai xe khong hoc cach cho).
-3. Sau canh bao deadline: nang phi dung mot lan.
+1. Quote a multiple of list price for each safe option and decline risky cars.
+2. Keep the opening fee fixed so drivers have no reason to wait for an increase.
+3. Raise the fee once after the deadline warning.
 
-Chay:  python dispatch.py --level 8 --seed test-1 --param price=1.5 --param fee=1.1
-Phan con lai (vong lap, ket noi lai, --final, --board) dung nguyen cua starter.
+Run:  python dispatch_v3.py --level 8 --seed test-1 --param price=1.5 --param fee=1.1
+The starter handles the game loop, reconnection, --final, and --board.
 """
 from __future__ import annotations
 
@@ -30,63 +30,63 @@ from spread.types import DeliveryOption, FeeStep, Order, PriceRequest
 
 @dataclass
 class Params:
-    price: float = 1.45        # gia bao = price x list price
-    fee: float = 1.15          # phi tai xe = fee x typical fee, giu nguyen tu luc dang
-    urgent_fee: float = 1.6    # phi sau canh bao deadline_close
-    min_slack_h: float = 8.0   # so gio toi thieu tu luc dealer tra loi den lan lay xe cuoi cung con kip han
-    max_km: float = 450.0      # tuyen dai hon thi tu choi
-    private_pickup: bool = False  # co nhan xe lay o dia chi tu nhan khong
-    trade_in: bool = False        # co nhan don hai xe khong
-    premium: bool = False         # co nhan xe premium khong (can tai xe kinh nghiem)
-    # --- v2: hoc gia trong tuan ---
-    learn: bool = False        # bat hoc gia; khi bat, `price` khong con dung
-    level0: float = 1.33       # du doan ban dau: dealer chap nhan 50% o muc level0 x list
-    slope: float = 10.0        # do doc duong cong thang (gia tang 10% thi kha nang thang giam ro)
-    sd_world: float = 0.10     # do bat dinh ve muc gia cua ca tuan (thang log)
-    sd_day: float = 0.10       # ... cua tung ngay (bat price war, outage)
-    sd_dealer: float = 0.07    # ... cua tung dealer
-    speed: float = 0.09        # option cham hon thi dealer chap nhan gia thap hon chung nay (log) moi bac
-    reserve: float = 0.10      # lai toi thieu moi don, tinh theo ti le chi phi
-    late_eur: float = 80.0     # chi phi ngam cua mot don tre, ngoai tien hoan (giu nguong 90%)
-    max_backlog: int = 45      # so don dang cho tai xe toi da; vuot thi ngung nhan xe moi
-    # --- v3: nang phi som cho gig e, va tinh rui ro theo so tai xe o gan ---
-    step1_h: float = 14.0      # con chung nay gio truoc lan lay xe cuoi ma chua ai nhan thi nang phi lan 1
-    step1_fee: float = 1.25    # muc phi lan 1 (x typical); 0 = tat
-    step2_h: float = 7.0       # tuong tu, lan 2
-    step2_fee: float = 1.5     # muc phi lan 2; 0 = tat
+    price: float = 1.45        # quote = price x list price
+    fee: float = 1.15          # opening driver fee = fee x typical fee
+    urgent_fee: float = 1.6    # fee after the deadline_close warning
+    min_slack_h: float = 8.0   # minimum hours from the dealer's answer to the last pickup that can arrive on time
+    max_km: float = 450.0      # decline lanes longer than this
+    private_pickup: bool = False  # accept pickups at private addresses
+    trade_in: bool = False        # accept two-car orders
+    premium: bool = False         # accept premium cars, which require experienced drivers
+    # --- v2 price learning within a week ---
+    learn: bool = False        # learn prices and override the fixed price
+    level0: float = 1.33       # initial estimate of 50% acceptance at level0 x list price
+    slope: float = 10.0        # slope of the win probability curve (a 10% price increase sharply reduces wins)
+    sd_world: float = 0.10     # uncertainty in the week's price level (log scale)
+    sd_day: float = 0.10       # uncertainty in the daily price level (captures price wars and outages)
+    sd_dealer: float = 0.07    # uncertainty in each dealer's price level
+    speed: float = 0.09        # accepted log price falls by this amount for each slower option
+    reserve: float = 0.10      # minimum profit per order as a share of cost
+    late_eur: float = 80.0     # cost of late delivery beyond the refund, to protect the 90% threshold
+    max_backlog: int = 45      # stop taking new cars if more than this many orders await a driver
+    # --- v3 raises fees early for unbooked gigs and uses nearby drivers to assess risk ---
+    step1_h: float = 14.0      # first fee increase if the gig is unbooked with this many hours until last pickup
+    step1_fee: float = 1.25    # first fee increase as a multiple of typical (0 disables it)
+    step2_h: float = 7.0       # hours before the last pickup for the second fee increase
+    step2_fee: float = 1.5     # second increased fee (0 disables it)
 
 
 P = Params()
-DECLINE = 4  # bao gia gap 4 lan list: khong bao gio thang, va khong mat thien cam cua dealer
+DECLINE = 4  # quote four times list price to decline without losing dealer goodwill
 
 
 def crow_km(a: tuple, b: tuple) -> float:
-    """Khoang cach duong chim bay giua hai diem (vi do, kinh do), tinh bang km."""
+    """Straight-line distance in km between two latitude and longitude pairs."""
     lat1, lon1, lat2, lon2 = map(math.radians, (*a, *b))
     h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
     return 12742 * math.asin(math.sqrt(h))
 
 
 def euros(cents: float) -> int:
-    """Lam tron ve euro chan, tinh bang cent."""
+    """Round to the nearest whole euro and return cents."""
     return int(cents / 100 + 0.5) * 100
 
 
 class Desk(starter.Desk):
     def __init__(self, world, level, now):
         super().__init__(world, level, now)
-        roads = world.client.map()["roads"]  # ban do khong ton token
+        roads = world.client.map()["roads"]  # the map costs no tokens
         self.minutes = {(r["from"], r["to"]): r["minutes"] for r in roads}
         self.km = {(r["from"], r["to"]): r["km"] for r in roads}
         places = {p["id"]: (p["lat"], p["lon"]) for p in world.client.map()["places"]}
         homes = [d["homePlaceId"] for d in world.roster()]
-        self.near = {p: sum(1 for h in homes if crow_km(places[h], places[p]) <= 30) for p in places}  # tai xe song trong 30 km
-        self.beliefs: dict[tuple, tuple[float, float]] = {}  # v2: du doan ve muc gia
-        self.quoted: dict[str, dict[str, float]] = {}        # v2: request -> option -> boi so list da bao
-        self.trust: dict[str, int] = {}                      # v2: dealer -> so don dung han (toi da 25)
+        self.near = {p: sum(1 for h in homes if crow_km(places[h], places[p]) <= 30) for p in places}  # drivers who live within 30 km
+        self.beliefs: dict[tuple, tuple[float, float]] = {}  # v2 estimate of the price level
+        self.quoted: dict[str, dict[str, float]] = {}        # v2 request -> option -> quoted multiple of list price
+        self.trust: dict[str, int] = {}                      # v2 dealer -> on-time orders (up to 25)
 
     def wanted(self, request: PriceRequest, option: DeliveryOption) -> bool:
-        """Co nen thang xe nay voi option nay khong: du thoi gian de mot tai xe nhan truoc canh bao."""
+        """Check whether there is enough time for a driver to take this option before the warning."""
         legs = request["legs"]
         if len(legs) > 1 and not P.trade_in:
             return False
@@ -101,45 +101,45 @@ class Desk(starter.Desk):
         return self.slack_hours(request, option) >= P.min_slack_h
 
     def slack_hours(self, request: PriceRequest, option: DeliveryOption) -> float:
-        """So gio tu luc dealer tra loi den lan lay xe cuoi cung con kip han."""
+        """Hours from the dealer's answer to the latest pickup that can arrive on time."""
         leg = request["legs"][0]
         ends = (leg["pickup"]["placeId"], leg["delivery"]["placeId"])
         last_pickup = min(leg["pickup"]["window"]["to"], option["deadline"] - self.minutes[ends])
         return (last_pickup - request["respondBy"]) / HOUR
 
-    # ---------- v2: hoc gia ----------
+    # ---------- v2 price learning ----------
     def parts(self, request: PriceRequest) -> list[tuple]:
-        """Muc gia cua mot request = tong ba phan: ca tuan, ngay hom do, dealer do."""
+        """The request's price level is the sum of the weekly, daily, and dealer components."""
         return [("world",), ("day", request["arrivedAt"] // DAY), ("dealer", request["dealerId"])]
 
     def belief(self, part: tuple) -> tuple[float, float]:
-        """Du doan hien tai ve mot phan: (gia tri, do bat dinh binh phuong)."""
+        """The current estimate for one component as (value, variance)."""
         if part not in self.beliefs:
             start = {"world": (math.log(P.level0), P.sd_world ** 2), "day": (0.0, P.sd_day ** 2), "dealer": (0.0, P.sd_dealer ** 2)}
             self.beliefs[part] = start[part[0]]
         return self.beliefs[part]
 
     def level_of(self, request: PriceRequest, index: int) -> tuple[float, float]:
-        """Log cua boi so list ma dealer chap nhan 50% so lan, cho option thu `index`, va do bat dinh."""
+        """The log price multiple the dealer accepts half the time for option `index`, with its variance."""
         beliefs = [self.belief(part) for part in self.parts(request)]
         known = math.log1p(0.01 * min(25, self.trust.get(request["dealerId"], 0))) - P.speed * index
         return known + sum(m for m, _ in beliefs), sum(v for _, v in beliefs)
 
     def chance(self, request: PriceRequest, index: int, multiple: float) -> float:
-        """Xac suat dealer nhan muc gia `multiple` x list."""
+        """Probability that the dealer accepts `multiple` times list price."""
         mean, variance = self.level_of(request, index)
         logit = P.slope * (mean - math.log(multiple)) / math.sqrt(1 + math.pi * P.slope ** 2 * variance / 8)
         return 1 / (1 + math.exp(-max(-30.0, min(30.0, logit))))
 
     def learn(self, request_id: str, won: str | None) -> None:
-        """Cap nhat du doan sau cau tra loi cua dealer: thang thi nang muc gia, thua thi ha."""
+        """Update the price estimate after the dealer replies. A win raises it and a loss lowers it."""
         request, quoted = self.requests.get(request_id), self.quoted.pop(request_id, None)
         if not request or not quoted:
             return
         kinds = [o["kind"] for o in request["options"]]
         if won in quoted:
             index = kinds.index(won)
-        else:  # thua: dealer da can option hap dan nhat cua minh voi doi thu
+        else:  # on a loss, the dealer weighed our most attractive option against the competitor
             index = max((kinds.index(k) for k in quoted), key=lambda i: self.chance(request, i, quoted[kinds[i]]))
         multiple = quoted[kinds[index]]
         mean, variance = self.level_of(request, index)
@@ -152,13 +152,13 @@ class Desk(starter.Desk):
             self.beliefs[part] = (m + v * push, max(1e-6, v - v * v * shrink))
 
     def late_chance(self, slack_hours: float, drivers_near: int) -> float:
-        """Kha nang don tre, theo so gio du va so tai xe song gan noi lay xe (do tren cac tuan test-1, test-2 cua minh)."""
+        """Probability of a late order by slack hours and drivers near pickup, measured on test-1 and test-2."""
         by_slack = 0.40 if slack_hours < 5 else 0.20 if slack_hours < 8 else 0.08 if slack_hours < 12 else 0.05
         by_supply = 3.0 if drivers_near <= 3 else 1.6 if drivers_near <= 20 else 1.3 if drivers_near <= 100 else 0.6
         return min(0.9, by_slack * by_supply)
 
     def waiting(self) -> int:
-        """So don dang cho tai xe nhan."""
+        """Number of orders waiting for a driver."""
         return sum(1 for order_id in self.orders if any(g not in self.booked for g in self.gigs_of(order_id)))
 
     def quote_learned(self, request: PriceRequest) -> None:
@@ -187,18 +187,18 @@ class Desk(starter.Desk):
             elif event["kind"] == "delivered" and event["orderId"] in self.orders:
                 order = self.orders[event["orderId"]]
                 left = [leg for leg in range(len(order["legs"])) if order["deliveredAt"][leg] is None and leg != event["leg"]]
-                if not left:  # xe cuoi cua don: dung han thi dealer tin them 1 bac, tre thi mat mot nua
+                if not left:  # last car in the order. Add one trust point if on time, or halve trust if late
                     count = self.trust.get(order["dealerId"], 0)
                     self.trust[order["dealerId"]] = min(25, count + 1) if event["at"] <= order["deadline"] else count // 2
         super().handle(event)
 
-    # ---------- chung ----------
+    # ---------- shared logic ----------
     def quote(self, request: PriceRequest) -> None:
         self.requests[request["id"]] = request
         options = request["options"]
         if P.learn and self.level > 3:
             return self.quote_learned(request)
-        if self.level <= 3:  # dealer bo qua gia: moi quote deu thang option dau o list price, tu choi = khong quote
+        if self.level <= 3:  # dealers ignore the quote price. Any quote wins the first option at list price. To decline, skip quoting
             if self.wanted(request, options[0]):
                 super().quote(request)
             return
@@ -211,7 +211,7 @@ class Desk(starter.Desk):
         typical = self.requests[order["id"]]["referenceFeeCents"] * cars / len(order["legs"])
         if order["id"] in self.urgent:
             steps = [(self.now, P.urgent_fee)]
-        else:  # mot muc phi; chi nang khi gig da e den sat han, luc ma cho them la tre
+        else:  # keep one fee until the gig is still unbooked near the deadline and further waiting would make it late
             steps = [(self.now, P.fee)]
             for hours, multiple in ((P.step1_h, P.step1_fee), (P.step2_h, P.step2_fee)) if self.level > 1 else ():
                 at = order["lastPickupAt"] - int(hours * HOUR)
@@ -231,29 +231,29 @@ def main() -> None:
     for item in args.param:
         name, _, value = item.partition("=")
         if name not in kinds:
-            sys.exit(f"Khong co tham so '{name}'. Co: {', '.join(kinds)}")
+            sys.exit(f"Unknown parameter '{name}'. Available parameters: {', '.join(kinds)}")
         setattr(P, name, value.lower() in ("1", "true", "yes") if isinstance(getattr(P, name), bool) else type(getattr(P, name))(float(value)))
     print(f"Params: {P}", flush=True)
-    starter.Desk = Desk  # starter choi voi ban Desk cua minh
+    starter.Desk = Desk  # run the starter with our Desk
     seed = rest[rest.index("--seed") + 1] if "--seed" in rest else "noseed"
     tag = re.sub(r"[^A-Za-z0-9=.,_-]", "", ",".join(args.param)) or "base"
     play = starter.play_practice
 
     def play_and_save(world, level):
-        """Choi xong thi luu moi thu cua tuan do vao runs/ de phan tich: diem, su kien, su that ve cac don, tai xe."""
+        """Save the completed week's score, events, and ground truth about orders and drivers to runs/ for analysis."""
         play(world, level)
         saved = {"seed": seed, "level": level, "params": vars(P), "worldId": world.id}
         for name, read in (("score", world.score), ("events", world.events), ("roster", world.roster), ("reveal", world.reveal)):
             try:
                 saved[name] = read()
-            except Exception as error:  # tuan xep hang khong cho reveal
+            except Exception as error:  # ranking weeks cannot be revealed
                 saved[name] = None
-                print(f"Khong luu duoc {name}: {error}", flush=True)
+                print(f"Could not save {name}: {error}", flush=True)
         os.makedirs("runs", exist_ok=True)
         path = os.path.join("runs", f"L{level}_{seed}_{tag}.json.gz")
         with gzip.open(path, "wt", encoding="utf-8") as out:
             json.dump(saved, out)
-        print(f"Da luu {path}", flush=True)
+        print(f"Saved {path}", flush=True)
 
     starter.play_practice = play_and_save
     sys.argv = [sys.argv[0]] + rest

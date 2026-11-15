@@ -1,5 +1,5 @@
-"""Chay lai cac su kien cua mot tuan da luu qua ban Desk moi, voi mot the gioi gia: de bat loi truoc khi dung may chu that.
-Khong do duoc diem (don thang la cua chinh sach cu), chi kiem tra desk khong vo va cac quyet dinh trong hop ly."""
+"""Replay a saved week's events through a new Desk in a mock world to catch errors before using the real server.
+The orders were won under the old policy. Use the replay to check for crashes and inspect decisions."""
 import gzip, json, sys, collections, statistics, time
 import dispatch
 from dispatch import Desk, P
@@ -69,13 +69,13 @@ def replay(path, params=None):
         for s in p["stops"]:
             if "window" in s: windows[s["kind"]] += 1
         plates += any(s.get("withPlates") for s in p["stops"]); manual += p["audience"]["manualLicence"]
-    print(f"=== {path[-60:]}  ({elapsed:.1f}s, {elapsed / max(1, stats['price_request']) * 1000:.1f} ms moi request)")
-    print("  su kien:", dict(stats))
-    print(f"  bao gia {len(quotes)}, tu choi {declined}, so option moi bao gia {dict(menu)}")
+    print(f"=== {path[-60:]}  ({elapsed:.1f}s, {elapsed / max(1, stats['price_request']) * 1000:.1f} ms per request)")
+    print("  events:", dict(stats))
+    print(f"  quotes {len(quotes)}, declined {declined}, options per quote {dict(menu)}")
     for k, v in mults.items():
-        v.sort(); print(f"    {k:<14} n {len(v):>4}  boi so list: 10% {v[len(v)//10]:.2f}  trung vi {v[len(v)//2]:.2f}  90% {v[len(v)*9//10]:.2f}")
-    print(f"  gig dang {len(posts)}: phi mo dau {dict(sorted(fee0.items()))}; so bac {dict(steps)}; cua so rieng {dict(windows)}; bien so {plates}, so san {manual}")
-    print("  (ngay, gia cua mot don tre EUR, do lech the gioi, hang doi, don thang):", trail)
+        v.sort(); print(f"    {k:<14} n {len(v):>4}  multiple of list price: 10% {v[len(v)//10]:.2f}  median {v[len(v)//2]:.2f}  90% {v[len(v)*9//10]:.2f}")
+    print(f"  gigs posted {len(posts)}: opening fees {dict(sorted(fee0.items()))}, fee steps {dict(steps)}, custom windows {dict(windows)}, plates {plates}, manual transmission {manual}")
+    print("  (day, price of a late order in EUR, world shift, queue, orders won):", trail)
     print(f"  trust: {dict(sorted(desk.trust.items(), key=lambda x: -x[1])[:6])}  beliefs world: {tuple(round(x, 3) for x in desk.beliefs.get(('world',), (0, 0)))}")
     return desk, world
 

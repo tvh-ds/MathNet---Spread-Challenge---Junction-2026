@@ -1,12 +1,12 @@
-"""Do the gioi tren cac tuan da luu trong runs/, roi ghi cac con so do duoc vao model.json cho bot dung.
+"""Fit models on the weeks saved in runs/ and write the parameters to model.json for the bot.
 
-    python fit.py                 # doc moi file runs/*.json.gz, in bang, ghi model.json
-    python fit.py --only explore  # chi dung cac tuan co ten chua 'explore'
+    python fit.py                 # read runs/*.json.gz, print the tables, and write model.json
+    python fit.py --only explore  # use only weeks whose filenames contain 'explore'
 
-Hai mo hinh:
-  1. Dung han: xac suat mot xe den kip, theo phi tra tai xe va cac dau hieu cua xe (world.Atlas.signs).
-  2. Dealer: muc gia ma dealer chap nhan, theo ngay, noi giao, noi lay, toc do, do tin.
-Khong con so nao trong model.json duoc go tay: tat ca sinh ra tu file nay.
+Two models:
+  1. On-time delivery probability from the driver fee and car features (world.Atlas.signs).
+  2. Dealer acceptance price by day, delivery site, pickup site, delivery speed, and trust.
+This script generates all values in model.json.
 """
 from __future__ import annotations
 
@@ -42,12 +42,12 @@ def load(path: str) -> dict:
 
 
 def explore_fee(world_id: str, order_id: str) -> float:
-    """Muc phi ngau nhien ma dispatch.py da rut cho don nay (cung xuc xac)."""
+    """Random opening fee drawn by dispatch.py for this order, using the same draw."""
     return random.Random(zlib.crc32((world_id + "fee" + order_id).encode())).choice(FEES)
 
 
 def orders_table(run: dict, atlas: Atlas) -> list:
-    """Moi don thang (khong bi huy) mot dong: cac dau hieu luc thang, phi, va ket cuc."""
+    """One row per won order that was not canceled, with features at the time of the win, fees, and outcomes."""
     events, reveal, params = run["events"], run["reveal"], run["params"]
     explore = bool(params.get("explore"))
     requests = {r["request"]["id"]: r["request"] for r in reveal["requests"]}
@@ -84,7 +84,7 @@ def orders_table(run: dict, atlas: Atlas) -> list:
     opened = run.get("opened") or {}  # order -> the fee multiple its first gig opened at, as the desk wrote it down
 
     def posted_fee(oid: str) -> float:
-        """Muc phi (x typical) ma gig dau tien cua don da mo. (Lich phi trong snapshot la lich cuoi cung: sau canh bao no la muc khan cap.)"""
+        """First gig's opening fee as a multiple of typical. The snapshot holds the final schedule, which shows the urgent fee after the warning."""
         if explore:
             return explore_fee(run["worldId"], oid)
         return float(opened[oid]) if oid in opened else float(params.get("fee", 1.0))
@@ -119,7 +119,7 @@ def orders_table(run: dict, atlas: Atlas) -> list:
 
 
 def logistic(X: np.ndarray, y: np.ndarray, ridge: np.ndarray, start: np.ndarray | None = None, steps: int = 60) -> np.ndarray:
-    """Hoi quy logistic co phat ridge (rieng tung he so), giai bang Newton."""
+    """Logistic regression with a ridge penalty per coefficient, solved by Newton's method."""
     w = np.zeros(X.shape[1]) if start is None else start.copy()
     for _ in range(steps):
         p = 1 / (1 + np.exp(-np.clip(X @ w, -30, 30)))
@@ -140,7 +140,7 @@ def fit_on_time(rows: list, names: list) -> dict:
     p = 1 / (1 + np.exp(-X @ w))
     loss = -np.mean(y * np.log(p) + (1 - y) * np.log(1 - p))
     base = -np.mean(y * np.log(y.mean()) + (1 - y) * np.log(1 - y.mean()))
-    print(f"\nMO HINH DUNG HAN: {len(rows)} don, {y.mean():.1%} dung han; log-loss {loss:.4f} (khong mo hinh: {base:.4f})")
+    print(f"\nON-TIME MODEL: {len(rows)} orders, {y.mean():.1%} on time; log-loss {loss:.4f} (baseline: {base:.4f})")
     for n, v in zip(names, w):
         print(f"    {n:<18}{v:+.3f}")
     return {n: round(float(v), 4) for n, v in zip(names, w)}
@@ -150,13 +150,13 @@ PAID_SIGNS = CAR_SIGNS + FEE_SIGNS + ["low_ends_friday", "mid_ends_friday"]  # o
 
 
 def fit_paid(rows: list) -> dict:
-    """Mot gig mo o muc phi nay thi cuoi cung tra bao nhieu (x typical): hoi quy tuyen tinh co ridge, tren cac tuan choi theo dung cach tang phi cua bot."""
+    """Predict the final fee as a multiple of typical using ridge regression on weeks that followed the bot's fee increases."""
     rows = [r for r in rows if r["paid"] is not None]
     X = np.array([[r["signs"][n] for n in PAID_SIGNS] for r in rows])
     y = np.array([min(r["paid"], 2.0) for r in rows])
     w = np.linalg.solve(X.T @ X + np.diag([0.0] + [0.3] * (len(PAID_SIGNS) - 1)), X.T @ y)
     err = float(np.sqrt(np.mean((X @ w - y) ** 2)))
-    print(f"\nMO HINH PHI THUC TRA: {len(rows)} don; tra trung binh x{y.mean():.3f} typical, mo trung binh x{np.mean([r['fee'] for r in rows]):.3f}; sai so {err:.3f}")
+    print(f"\nFEE PAID MODEL: {len(rows)} orders; average paid x{y.mean():.3f} typical, average opening x{np.mean([r['fee'] for r in rows]):.3f}; error {err:.3f}")
     for n, v in zip(PAID_SIGNS, w):
         print(f"    {n:<18}{v:+.3f}")
     groups = defaultdict(list)
@@ -164,7 +164,7 @@ def fit_paid(rows: list) -> dict:
         groups[round(r["fee"], 2)].append((r["paid"], p, r["on_time"]))
     for g in sorted(groups):
         v = groups[g]
-        print(f"    mo o x{g:<5} n {len(v):>5}  tra that x{sum(a for a, _, _ in v) / len(v):.3f}  mo hinh x{sum(b for _, b, _ in v) / len(v):.3f}  dung han {sum(c for _, _, c in v) / len(v):6.1%}")
+        print(f"    opens at x{g:<5} n {len(v):>5}  actual paid x{sum(a for a, _, _ in v) / len(v):.3f}  modeled x{sum(b for _, b, _ in v) / len(v):.3f}  on time {sum(c for _, _, c in v) / len(v):6.1%}")
     return {n: round(float(v), 4) for n, v in zip(PAID_SIGNS, w)}
 
 
@@ -176,12 +176,12 @@ def calibration(rows: list, weights: dict, key, label: str) -> None:
     print(f"  {label}")
     for g in sorted(groups, key=lambda x: (isinstance(x, str), x)):
         v = groups[g]
-        print(f"    {str(g):<14} n {len(v):>5}  dung han that {sum(o for _, o, _ in v) / len(v):6.1%}  mo hinh {sum(p for p, _, _ in v) / len(v):6.1%}  co tai xe truoc canh bao {sum(b for _, _, b in v) / len(v):6.1%}")
+        print(f"    {str(g):<14} n {len(v):>5}  actual on-time rate {sum(o for _, o, _ in v) / len(v):6.1%}  modeled {sum(p for p, _, _ in v) / len(v):6.1%}  booked before warning {sum(b for _, _, b in v) / len(v):6.1%}")
 
 
 # ---------------------------------------------------------------------------------------------- dealers
 def quotes_table(run: dict) -> list:
-    """Moi bao gia chi co mot option (de biet chac dealer can option nao) mot dong: gia, ket qua, va boi canh."""
+    """One row per single-option quote so the dealer's choice is known, with its price, outcome, and context."""
     events, reveal = run["events"], run["reveal"]
     won_at, deadline, dealer_of, noted = {}, {}, {}, {}
     for e in events:
@@ -217,7 +217,7 @@ def quotes_table(run: dict) -> list:
 
 
 def asked(row: dict, kind: str, multiple: float, gaps: tuple) -> float:
-    """Gia cua mot option nhu dealer can no: log boi so cua list price option nhanh nhat, sau khi cong so euro dealer tra it hon cho moi buoc cho
+    """An option's quote as the dealer weighs it. Add the euro discount per step to a slower option, then take the log of the multiple of the fastest option's list price
     (dispatch.Desk.asked)."""
     index = row["kinds"].index(kind)
     gap = sum(gaps[0] if k == "same_day" else gaps[1] for k in row["kinds"][:index])
@@ -248,12 +248,12 @@ def market_design(single: list, gaps: tuple) -> tuple:
 
 
 def fit_market(rows: list, quiet: bool = False, gaps: tuple | None = None) -> dict:
-    """Muc gia dealer chap nhan: logistic theo log gia, quanh mot muc la tong cac phan (tuan, ngay, noi giao, noi lay) cong do tin.
-    Option cham hon: dealer tra it hon mot so euro co dinh (khong phai mot ti le cua gia) -- hai so do duoc tim o day."""
+    """Model dealer acceptance with a logistic curve in log price. The price level sums week, day, delivery site, pickup site, and trust.
+    Fit the two fixed euro discounts for slower options."""
     single = [r for r in rows if len(r["offered"]) == 1]
     if gaps is None:
         gaps = (16.0, 9.0)
-        for _ in range(2):  # tung so mot, hai vong
+        for _ in range(2):  # two passes, one value at a time
             gaps = (min(range(6, 27), key=lambda d: market_design(single, (float(d), gaps[1]))[0]), gaps[1])
             gaps = (float(gaps[0]), float(min(range(0, 19), key=lambda d: market_design(single, (gaps[0], float(d)))[0])))
     loss, w, columns = market_design(single, gaps)
@@ -264,32 +264,32 @@ def fit_market(rows: list, quiet: bool = False, gaps: tuple | None = None) -> di
     level = w[columns["one"]] / slope
     sd = lambda d: float(np.std(list(d.values()))) if d else 0.0
     if not quiet:
-        print(f"\nMO HINH DEALER: {len(single)} bao gia mot option, thang {y.mean():.1%}; log-loss {loss:.4f}")
-        print(f"    do doc {slope:.2f}; muc trung binh x{math.exp(level):.3f} list; do tin {w[columns['trust']] / slope:+.4f} moi don dung han")
-        print(f"    option cham hon: dealer tra it hon EUR {gaps[0]:.0f} (hom sau so voi trong ngay) va EUR {gaps[1]:.0f} (trong 3 ngay so voi hom sau)")
-        print(f"    do lech giua cac tuan {sd(worlds):.3f}, giua cac ngay trong tuan {sd(days):.3f}, noi giao {sd(to):.3f}, noi lay {sd(frm):.3f}")
-        print("    noi giao (log gia):", ", ".join(f"{k} {v:+.3f}" for k, v in sorted(to.items(), key=lambda x: x[1])))
-        print("    noi lay  (log gia):", ", ".join(f"{k} {v:+.3f}" for k, v in sorted(frm.items(), key=lambda x: x[1])))
-        print("    muc tung tuan:", ", ".join(f"x{math.exp(level + v):.2f}" for v in worlds.values()))
+        print(f"\nDEALER MODEL: {len(single)} single-option quotes, win rate {y.mean():.1%}; log-loss {loss:.4f}")
+        print(f"    slope {slope:.2f}; average level x{math.exp(level):.3f} list; trust {w[columns['trust']] / slope:+.4f} per on-time order")
+        print(f"    slower options: dealers pay EUR {gaps[0]:.0f} less (next day versus same day) and EUR {gaps[1]:.0f} less (within 3 days versus next day)")
+        print(f"    standard deviation across weeks {sd(worlds):.3f}, across days within a week {sd(days):.3f}, delivery site {sd(to):.3f}, pickup site {sd(frm):.3f}")
+        print("    delivery site (log price):", ", ".join(f"{k} {v:+.3f}" for k, v in sorted(to.items(), key=lambda x: x[1])))
+        print("    pickup site  (log price):", ", ".join(f"{k} {v:+.3f}" for k, v in sorted(frm.items(), key=lambda x: x[1])))
+        print("    level by week:", ", ".join(f"x{math.exp(level + v):.2f}" for v in worlds.values()))
     return {"slope": round(float(slope), 2), "level": round(float(level), 4), "trust": round(float(w[columns["trust"]] / slope), 4), "gaps": list(gaps),
             "sd": {"world": round(sd(worlds), 3), "day": round(sd(days), 3), "to": round(sd(to), 3), "from": round(sd(frm), 3)},
             "places": {"to": {k: round(float(v), 3) for k, v in to.items()}, "from": {k: round(float(v), 3) for k, v in frm.items()}}}
 
 
 def menus(rows: list) -> None:
-    """Khi bao hai option: dealer chon cai nao? So voi khoang cach gia giua hai option."""
+    """Compare the dealer's choice against the price gap between two quoted options."""
     pairs = [r for r in rows if len(r["offered"]) >= 2 and r["won"]]
     picks = Counter()
     for r in pairs:
         order = [k for k in r["kinds"] if k in r["offered"]]
         cheapest = min(order, key=lambda k: r["offered"][k] * r["lists"][k])
-        picks[("nhanh nhat" if r["option"] == order[0] else "cham hon", "re nhat" if r["option"] == cheapest else "dat hon")] += 1
-    print(f"\n  Bao nhieu option thi dealer chon ({len(pairs)} lan thang voi >= 2 option): {dict(picks)}")
+        picks[("fastest" if r["option"] == order[0] else "slower", "cheapest" if r["option"] == cheapest else "more expensive")] += 1
+    print(f"\n  Option choices ({len(pairs)} wins with >= 2 options): {dict(picks)}")
 
 
 def learner_score(runs: list, world_map: dict, settings: dict) -> float:
-    """Cho chinh bo hoc gia cua bot (dispatch.Desk) di qua cac tuan da luu theo dung thu tu thoi gian, va cham no:
-    log-loss cua du doan truoc moi cau tra loi cua dealer. Thap hon la tot hon. Khong can may chu."""
+    """Run the bot's price learner (dispatch.Desk) through saved weeks in chronological order.
+    Score the prediction before each dealer reply with log loss. Lower is better. Runs offline."""
     import dispatch
     knobs = {name: value for name, value in settings.items() if not name.startswith("_")}
     saved = {name: getattr(dispatch.P, name) for name in knobs}
@@ -338,8 +338,8 @@ def learner_score(runs: list, world_map: dict, settings: dict) -> float:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only", default="", help="chi doc cac file co ten chua chuoi nay")
-    parser.add_argument("--runs", default="runs", help="thu muc chua cac tuan da luu")
+    parser.add_argument("--only", default="", help="only read files whose names contain this string")
+    parser.add_argument("--runs", default="runs", help="directory containing the saved weeks")
     parser.add_argument("--map", default="map.json")
     parser.add_argument("--out", default="model.json")
     args = parser.parse_args()
@@ -350,26 +350,26 @@ def main() -> None:
             run = load(path)
             if run.get("reveal") and run.get("roster"):
                 runs.append(run)
-    measured = [r for r in runs if r["params"].get("explore")]  # cac tuan do the gioi: gia va phi ngau nhien
-    print(f"{len(runs)} tuan da luu, trong do {len(measured)} tuan do the gioi (explore)")
-    own = [r for r in runs if r["params"].get("try_fees")]  # cac tuan choi theo cach cua bot, chi rieng phi mo dau la ngau nhien
+    measured = [r for r in runs if r["params"].get("explore")]  # exploration weeks with randomized prices and fees
+    print(f"{len(runs)} saved weeks, including {len(measured)} exploration weeks")
+    own = [r for r in runs if r["params"].get("try_fees")]  # weeks played normally with randomized opening fees
     fleet_runs = own or measured or runs  # the fee of a gig is judged as the bot plays it: a gig that waits goes up fee steps
-    print(f"Mo hinh tai xe khop tren {len(fleet_runs)} tuan" + (" choi theo cach cua bot, phi mo dau ngau nhien (try_fees)" if own else ""))
+    print(f"Driver model fitted on {len(fleet_runs)} weeks" + (" played normally with randomized opening fees (try_fees)" if own else ""))
     rows = []
     for run in fleet_runs:
         table = orders_table(run, Atlas(world_map, run["roster"]))
         rows += table
-        print(f"{run['path'][-60:]:<62}{len(table):>4} don  {sum(r['on_time'] for r in table) / max(1, len(table)):6.1%} dung han", flush=True)
+        print(f"{run['path'][-60:]:<62}{len(table):>4} orders  {sum(r['on_time'] for r in table) / max(1, len(table)):6.1%} on time", flush=True)
     weights = fit_on_time(rows, ON_TIME_SIGNS)
-    calibration(rows, weights, lambda r: round(r["fee"], 2), "theo phi (x typical)")
-    calibration(rows, weights, lambda r: "<5h" if r["slack_h"] < 5 else "5-8h" if r["slack_h"] < 8 else "8-12h" if r["slack_h"] < 12 else "12-24h" if r["slack_h"] < 24 else "24-48h" if r["slack_h"] < 48 else ">=48h", "theo so gio du")
-    calibration(rows, weights, lambda r: "0-3" if r["near"] < 4 else "4-20" if r["near"] < 21 else "21-100" if r["near"] < 101 else ">100", "theo so tai xe gan noi lay")
-    calibration(rows, weights, lambda r: "<40" if r["km"] < 40 else "40-100" if r["km"] < 100 else "100-200" if r["km"] < 200 else "200-400" if r["km"] < 400 else ">=400", "theo km")
+    calibration(rows, weights, lambda r: round(r["fee"], 2), "by fee (x typical)")
+    calibration(rows, weights, lambda r: "<5h" if r["slack_h"] < 5 else "5-8h" if r["slack_h"] < 8 else "8-12h" if r["slack_h"] < 12 else "12-24h" if r["slack_h"] < 24 else "24-48h" if r["slack_h"] < 48 else ">=48h", "by slack hours")
+    calibration(rows, weights, lambda r: "0-3" if r["near"] < 4 else "4-20" if r["near"] < 21 else "21-100" if r["near"] < 101 else ">100", "by driver count near pickup")
+    calibration(rows, weights, lambda r: "<40" if r["km"] < 40 else "40-100" if r["km"] < 100 else "100-200" if r["km"] < 200 else "200-400" if r["km"] < 400 else ">=400", "by lane length in km")
     for fee in FEES:
         for label, pick in (("<8h", lambda r: r["slack_h"] < 8), ("8-24h", lambda r: 8 <= r["slack_h"] < 24), (">=24h", lambda r: r["slack_h"] >= 24)):
             some = [r for r in rows if r["fee"] == fee and pick(r)]
             if some:
-                print(f"    phi {fee:<5} gio du {label:<6} n {len(some):>4}  dung han {sum(r['on_time'] for r in some) / len(some):6.1%}  co tai xe truoc canh bao {sum(r['booked'] for r in some) / len(some):6.1%}")
+                print(f"    fee {fee:<5} slack hours {label:<6} n {len(some):>4}  on time {sum(r['on_time'] for r in some) / len(some):6.1%}  booked before warning {sum(r['booked'] for r in some) / len(some):6.1%}")
     late_rows, booked_rows = [r for r in rows if not r["on_time"]], [r for r in rows if r["booked"]]
     unbooked = [r for r in rows if not r["booked"]]
     model = {"on_time": weights, "on_time_orders": len(rows), "on_time_weeks": len(fleet_runs),
@@ -378,8 +378,8 @@ def main() -> None:
              "unbooked_late": round(sum(not r["on_time"] for r in unbooked) / max(1, len(unbooked)), 3)}
     if own:
         model["paid"] = fit_paid(rows)
-    print(f"\nMot don tre tra lai trung binh {model['refund']:.2f} x list price ({len(late_rows)} don tre)")
-    print(f"Co tai xe truoc canh bao: {len(booked_rows)} don, tre {model['booked_late']:.1%}. Khong co: {len(unbooked)} don, tre {sum(not r['on_time'] for r in unbooked) / max(1, len(unbooked)):.1%}")
+    print(f"\nAverage refund for a late order is {model['refund']:.2f} x list price ({len(late_rows)} late orders)")
+    print(f"Booked before warning: {len(booked_rows)} orders, late {model['booked_late']:.1%}. Unbooked: {len(unbooked)} orders, late {sum(not r['on_time'] for r in unbooked) / max(1, len(unbooked)):.1%}")
 
     market_runs = measured or runs
     quotes = [row for run in market_runs for row in quotes_table(run)]
@@ -387,29 +387,29 @@ def main() -> None:
     menus(quotes)
     model["market"], model["market_quotes"], model["places"] = {k: v for k, v in market.items() if k != "places"}, len(quotes), market["places"]
     json.dump(model, open(args.out, "w", encoding="utf-8"), indent=1)
-    print(f"\nDa ghi {args.out}")
+    print(f"\nWrote {args.out}")
 
-    # Bo hoc gia cua bot: chon do doc va do rong cua tung phan tren nua dau cac tuan, cham lai tren nua sau (khong dung de chon gi).
+    # Tune the price learner's slope and component spreads on the first half of the weeks. Use the second half only for evaluation.
     tune, hold = market_runs[:len(market_runs) // 2], market_runs[len(market_runs) // 2:]
     places_tune = fit_market([row for run in tune for row in quotes_table(run)], quiet=True, gaps=tuple(market["gaps"]))["places"]
     knobs = dict(level0=math.exp(market["level"]), slope=market["slope"], gap_next=market["gaps"][0], gap_later=market["gaps"][1], trust=market["trust"],
                  sd_world=0.10, sd_day=0.10, sd_dealer=0.05, sd_to=0.05, sd_from=0.03, sd_lane=0.0)
     with_table = {"_model": {"places": places_tune}}
-    print("\nBO HOC GIA cua bot, log-loss (thap hon la tot hon):")
-    print(f"    truoc khi chon: tune {learner_score(tune, world_map, {**knobs, **with_table}):.4f}  hold {learner_score(hold, world_map, {**knobs, **with_table}):.4f}  (khong co bang noi chon: hold {learner_score(hold, world_map, {**knobs, '_model': {}}):.4f})")
+    print("\nBOT PRICE LEARNER log loss (lower is better):")
+    print(f"    before tuning: tune {learner_score(tune, world_map, {**knobs, **with_table}):.4f}  hold {learner_score(hold, world_map, {**knobs, **with_table}):.4f}  (without location tables: hold {learner_score(hold, world_map, {**knobs, '_model': {}}):.4f})")
     grid = {"slope": (10.0, 12.0, 14.0, 16.0), "sd_world": (0.06, 0.10, 0.15), "sd_day": (0.10, 0.15, 0.20), "sd_dealer": (0.01, 0.02, 0.05), "sd_to": (0.03, 0.05),
             "sd_from": (0.01, 0.02, 0.04), "sd_lane": (0.0, 0.03, 0.05, 0.08)}
-    for _ in range(2):  # hai vong, tung nut mot
+    for _ in range(2):  # two passes, one setting at a time
         for name, values in grid.items():
             scores = {v: learner_score(tune, world_map, {**knobs, **with_table, name: v}) for v in values}
             knobs[name] = min(scores, key=scores.get)
-    print(f"    sau khi chon:   tune {learner_score(tune, world_map, {**knobs, **with_table}):.4f}  hold {learner_score(hold, world_map, {**knobs, **with_table}):.4f}")
-    print("    da chon:", {k: knobs[k] for k in grid})
+    print(f"    after tuning:   tune {learner_score(tune, world_map, {**knobs, **with_table}):.4f}  hold {learner_score(hold, world_map, {**knobs, **with_table}):.4f}")
+    print("    selected:", {k: knobs[k] for k in grid})
     model["learner"] = {k: knobs[k] for k in grid}
     model["learner"]["slope"] = PLAYED_SLOPE
-    print(f"    do doc dung khi choi: {PLAYED_SLOPE} (do doc du doan tot nhat o tren khong phai do doc kiem nhieu tien nhat)")
+    print(f"    slope used in play: {PLAYED_SLOPE} (chosen for profit in practice)")
     json.dump(model, open(args.out, "w", encoding="utf-8"), indent=1)
-    print(f"Da ghi {args.out}")
+    print(f"Wrote {args.out}")
 
 
 if __name__ == "__main__":

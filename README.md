@@ -48,7 +48,7 @@ Worlds repeat to the euro: the same seed gives the same week. So every compariso
 
 Tuned on 8 weeks: €17,704 a week. Played once on 117 new weeks: €17,702.
 
-`NHAT_KY_THI_NGHIEM.md` is the full log (in Vietnamese): every run, what changed, what we saw, what we decided.
+The [experiment log](docs/research/EXPERIMENT_LOG.md) records every run, what changed, what we observed, and what we decided.
 
 ## How we measured
 
@@ -97,12 +97,14 @@ Tuned on 8 weeks: €17,704 a week. Played once on 117 new weeks: €17,702.
 | `board.py`, `clean.py` | The ranking table; freeing practice slots |
 | `study.py`, `pairs_study.py`, `cv.py`, `analyze.py`, `v4_look.py`, `slim.py` | Analyses of saved weeks |
 | `dispatch_v1.py` to `dispatch_v3x.py` | Earlier versions, kept for the record |
-| `NHAT_KY_THI_NGHIEM.md` | The experiment log (Vietnamese) |
-| `PITCH_NOTES.md`, `KE_HOACH_FINAL.md` | Talk notes and the plan for the final day (Vietnamese) |
+| [Architecture](docs/architecture/ARCHITECTURE_v1.md) | How the dispatch desk works |
+| [Experiment log](docs/research/EXPERIMENT_LOG.md) | Runs, observations, and strategy decisions |
+| [Pitch notes](docs/presentation/PITCH_NOTES.md) | Slide guide, speaker scripts, and jury questions |
+| [Final-day plan](docs/operations/FINAL_DAY_PLAN.md) | Final-day schedule and operations |
 
 ## Run it
 
-The desk needs the organisers' kit (the `spread` package) and the two environment variables it asks for.
+Enter `engine/` from the repository root. Use a Python virtual environment with the organizers' `spread` package and set `SPREAD_URL` and `SPREAD_KEY`. On PowerShell, `. .\load-env.ps1` loads them from `engine/.env`.
 
 ```
 python dispatch.py --level 8 --seed test-1                       # one practice week
@@ -110,6 +112,6 @@ python dispatch.py --level 8 --seed test-1 --param reserve=0     # the same week
 python sweep.py --seeds n-1:16 "tag=a" "tag=a,reserve=0"         # paired, 16 weeks each
 python sweep.py --summary tag=a
 python weeks.py "tag=a" "tag=a,reserve=0"                        # week by week
-./final.sh                                                       # the final, with a restart loop
+bash final.sh                                                    # the final, with a restart loop
 ```
 

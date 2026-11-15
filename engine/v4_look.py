@@ -26,9 +26,9 @@ for path in sys.argv[1:]:
         rs = by[m0]; n = len(rs)
         w = sorted(r["wait"] for r in rs if r["wait"] is not None)
         at_first = sum(1 for r in rs if r["mb"] is not None and abs(r["mb"] - m0) < 0.02)
-        print(f"  mo dau x{m0:<5} n {n:>4}  nhan o phi dau {at_first/n:5.0%}  trong 15p {sum(1 for x in w if x <= 0.25)/n:5.0%}  trong 6h {sum(1 for x in w if x <= 6)/n:5.0%}  khong ai nhan gig dau {sum(1 for r in rs if r['wait'] is None)/n:5.0%}  tre {sum(r['late'] for r in rs)/n:5.1%}")
+        print(f"  opening fee x{m0:<5} n {n:>4}  booked at opening fee {at_first/n:5.0%}  within 15 min {sum(1 for x in w if x <= 0.25)/n:5.0%}  within 6h {sum(1 for x in w if x <= 6)/n:5.0%}  first gig never booked {sum(1 for r in rs if r['wait'] is None)/n:5.0%}  late {sum(r['late'] for r in rs)/n:5.1%}")
     paid = collections.Counter(r["mb"] for r in rows if r["mb"] is not None)
-    print("  phi luc duoc nhan (gig dau):", dict(sorted(paid.items())))
+    print("  fee at booking (first gig):", dict(sorted(paid.items())))
     for day in range(5):
         rs = [r for r in rows if r["day"] == day and r["m0"] <= 0.86]
-        if rs: print(f"  ngay {day}: gig mo dau 0.85: {len(rs):>3}, nhan trong 15p {sum(1 for r in rs if r['wait'] is not None and r['wait'] <= 0.25)/len(rs):5.0%}, nhan o 0.85 {sum(1 for r in rs if r['mb'] is not None and r['mb'] <= 0.86)/len(rs):5.0%}")
+        if rs: print(f"  day {day}: gigs opening at 0.85: {len(rs):>3}, booked within 15 min {sum(1 for r in rs if r['wait'] is not None and r['wait'] <= 0.25)/len(rs):5.0%}, booked at 0.85 {sum(1 for r in rs if r['mb'] is not None and r['mb'] <= 0.86)/len(rs):5.0%}")

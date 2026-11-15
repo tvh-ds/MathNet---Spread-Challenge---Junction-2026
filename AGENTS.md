@@ -2,13 +2,13 @@
 
 ## Project Structure
 
-- `dispatch.py` is the entry point. `world.py` handles routing, hours, and model inputs. `notes_reader.py` parses dealer notes. `model.json` holds fitted parameters, and `map.json` supports offline tools.
+- The runnable files and their data live in `engine/`. `dispatch.py` is the entry point. `world.py` handles routing, hours, and model inputs. `notes_reader.py` parses dealer notes. `model.json` holds fitted parameters, and `map.json` supports offline tools.
 - `fit.py`, `sweep.py`, and `weeks.py` fit models and compare experiments. `replay_test.py` and `restart_test.py` are standalone checks. `dispatch_v1.py` through `dispatch_v3x.py` are historical versions.
-- Start with `README.md` and `ARCHITECTURE_v1.md`. `NHAT_KY_THI_NGHIEM.md` records research, strategy changes, and results. `KE_HOACH_FINAL.md` covers final-day operations, and `PITCH_NOTES.md` holds presentation notes.
+- Start with [README.md](README.md) and the [architecture guide](docs/architecture/ARCHITECTURE_v1.md). The [experiment log](docs/research/EXPERIMENT_LOG.md) records research, strategy changes, and results. The [final-day plan](docs/operations/FINAL_DAY_PLAN.md) covers operations, and the [pitch notes](docs/presentation/PITCH_NOTES.md) cover the presentation.
 
 ## Run and Develop Locally
 
-Run commands from the directory containing `dispatch.py` and `map.json`. Use a Python virtual environment with the organizers’ `spread` kit, plus NumPy for model fitting. Set `SPREAD_URL` and `SPREAD_KEY` for service-backed runs. On PowerShell, `. .\load-env.ps1` loads them from a local `.env`.
+Run commands from `engine/`, which contains `dispatch.py` and `map.json`. Use a Python virtual environment with the organizers’ `spread` kit, plus NumPy for model fitting. Set `SPREAD_URL` and `SPREAD_KEY` for service-backed runs. On PowerShell, `. .\load-env.ps1` loads them from a local `.env`.
 
 - `python dispatch.py --level 8 --seed test-1` runs one practice week and saves it under `runs/`.
 - `python sweep.py --seeds n-1:8 "tag=a" "tag=a,reserve=0"` compares two configurations on the same eight practice seeds.

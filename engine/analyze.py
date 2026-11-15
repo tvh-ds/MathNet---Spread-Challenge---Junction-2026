@@ -1,4 +1,4 @@
-"""Doc cac file trong runs/ va in ra: tien di dau, don tre vi sao, tre o dau."""
+"""Report where money went and where and why orders were late, using files in runs/."""
 import gzip, json, sys, collections, glob
 HOUR, DAY = 60, 1440
 METRO = {"helsinki", "espoo", "vantaa"}
@@ -53,24 +53,24 @@ def share(rows, key, label):
     print(f"  {label}")
     for g in sorted(groups, key=str):
         rs = groups[g]; n = len(rs)
-        print(f"    {str(g):<22} don {n:>4}  tre {sum(r['late'] for r in rs)/n:6.1%}  canh bao {sum(r['warned'] for r in rs)/n:6.1%}  lai/don {sum(r['net'] for r in rs)/n/100:7.1f}  gia x{sum(r['mult'] for r in rs)/n:.2f}  phi x{sum(r['fee'] for r in rs)/max(1,sum(r['typical'] for r in rs)):.2f}")
+        print(f"    {str(g):<22} orders {n:>4}  late {sum(r['late'] for r in rs)/n:6.1%}  warned {sum(r['warned'] for r in rs)/n:6.1%}  profit/order {sum(r['net'] for r in rs)/n/100:7.1f}  price x{sum(r['mult'] for r in rs)/n:.2f}  fee x{sum(r['fee'] for r in rs)/max(1,sum(r['typical'] for r in rs)):.2f}")
 
 for path in sys.argv[1:] or sorted(glob.glob("runs/*.json.gz")):
     ledger, rows, d = table(load(path))
     n = len(rows); late = [r for r in rows if r["late"]]
-    print(f"\n=== {path}\n  diem: {d['score']['marginCents']/100:,.0f} EUR, {n} don, tre {len(late)} ({len(late)/n:.1%})")
-    print("  so cai (EUR): " + ", ".join(f"{k} {v/100:,.0f}" for k, v in sorted(ledger.items(), key=lambda x: -abs(x[1]))))
+    print(f"\n=== {path}\n  score: {d['score']['marginCents']/100:,.0f} EUR, {n} orders, late {len(late)} ({len(late)/n:.1%})")
+    print("  ledger (EUR): " + ", ".join(f"{k} {v/100:,.0f}" for k, v in sorted(ledger.items(), key=lambda x: -abs(x[1]))))
     cause = collections.Counter()
     for r in late:
-        cause["khong ai nhan truoc canh bao" if not r["booked_before_warn"] else "lay xe hut" if r["failed"] else "tai xe bo gig" if r["drops"] else "khac (lai cham, gio mo cua, doi ke hoach)"] += 1
-    print("  nguyen nhan don tre:", dict(cause))
-    print("  lay xe hut theo ly do:", dict(collections.Counter(k for r in rows for k in r["kinds"] if k.startswith("fail_") for _ in range(r["kinds"][k]))))
-    share(rows, lambda r: r["option"], "theo option")
-    share(rows, lambda r: "<5h" if r["slack"] < 5 else "5-8h" if r["slack"] < 8 else "8-12h" if r["slack"] < 12 else "12-24h" if r["slack"] < 24 else ">=24h", "theo so gio du")
-    share(rows, lambda r: "<6k" if r["typical"] < 6000 else "6-10k" if r["typical"] < 10000 else "10-15k" if r["typical"] < 15000 else ">=15k", "theo typical fee (cent) ~ do dai tuyen")
-    share(rows, lambda r: "0-3" if r["np"] < 4 else "4-20" if r["np"] < 21 else "21-100" if r["np"] < 101 else ">100", "theo so tai xe song o noi LAY xe")
-    share(rows, lambda r: "0-3" if r["nd"] < 4 else "4-20" if r["nd"] < 21 else "21-100" if r["nd"] < 101 else ">100", "theo so tai xe song o noi GIAO xe")
-    share(rows, lambda r: r["note"], "co ghi chu")
-    share(rows, lambda r: r["day"], "theo ngay thang don")
+        cause["no driver before warning" if not r["booked_before_warn"] else "failed pickup" if r["failed"] else "driver dropped the gig" if r["drops"] else "other (slow driving, opening hours, change of plans)"] += 1
+    print("  causes of late orders:", dict(cause))
+    print("  pickup failures by reason:", dict(collections.Counter(k for r in rows for k in r["kinds"] if k.startswith("fail_") for _ in range(r["kinds"][k]))))
+    share(rows, lambda r: r["option"], "by option")
+    share(rows, lambda r: "<5h" if r["slack"] < 5 else "5-8h" if r["slack"] < 8 else "8-12h" if r["slack"] < 12 else "12-24h" if r["slack"] < 24 else ">=24h", "by slack hours")
+    share(rows, lambda r: "<6k" if r["typical"] < 6000 else "6-10k" if r["typical"] < 10000 else "10-15k" if r["typical"] < 15000 else ">=15k", "by typical fee in cents (a proxy for lane length)")
+    share(rows, lambda r: "0-3" if r["np"] < 4 else "4-20" if r["np"] < 21 else "21-100" if r["np"] < 101 else ">100", "by drivers living near pickup")
+    share(rows, lambda r: "0-3" if r["nd"] < 4 else "4-20" if r["nd"] < 21 else "21-100" if r["nd"] < 101 else ">100", "by drivers living near delivery")
+    share(rows, lambda r: r["note"], "has a dealer note")
+    share(rows, lambda r: r["day"], "by day the order was won")
     waits = sorted(r["wait"] for r in rows if r["wait"] is not None)
-    print(f"  cho tai xe nhan (gio): trung vi {waits[len(waits)//2]:.1f}, 75% {waits[len(waits)*3//4]:.1f}, 90% {waits[len(waits)*9//10]:.1f}; khong bao gio duoc nhan: {sum(r['wait'] is None for r in rows)}")
+    print(f"  wait for a driver (hours): median {waits[len(waits)//2]:.1f}, 75% {waits[len(waits)*3//4]:.1f}, 90% {waits[len(waits)*9//10]:.1f}; never booked: {sum(r['wait'] is None for r in rows)}")

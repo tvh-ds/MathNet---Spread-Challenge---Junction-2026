@@ -1,4 +1,4 @@
-"""So sanh cac bo dau hieu cua mo hinh dung han bang kiem dinh cheo theo tuan (bo han mot so tuan ra khi khop)."""
+"""Compare feature sets for the on-time model with cross-validation that holds out whole weeks."""
 import glob, json, math, sys
 import numpy as np
 import fit

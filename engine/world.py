@@ -1,7 +1,7 @@
-"""Cac su that cua mot the gioi ma moi quyet dinh deu doc: duong di, gio mo cua, tai xe song o dau,
-va tu do: mot xe con bao nhieu gio de lay, kho hay de tim tai xe.
+"""Shared routing data, site opening hours, and driver locations for a world.
+These determine the pickup window and how hard it will be to find a driver.
 
-Dung chung cho bot (dispatch.py) va cho viec do dac tren cac tuan da luu (fit.py), de hai ben tinh giong het nhau.
+The dispatcher (dispatch.py) and offline model fitting (fit.py) use the same calculations.
 """
 from __future__ import annotations
 
@@ -10,20 +10,20 @@ from collections import Counter
 from typing import Optional
 
 HOUR, DAY = 60, 1440
-NEAR_KM = 30       # app bao gig moi cho tai xe song trong 30 km quanh diem lay xe (RULES.md)
-CHARGING = 40      # phut cho mot lan sac (RULES.md)
-PLATES = 30        # phut gan bien so (RULES.md)
+NEAR_KM = 30       # the app notifies drivers who live within 30 km of pickup about new gigs (RULES.md)
+CHARGING = 40      # minutes per charging stop (RULES.md)
+PLATES = 30        # minutes to fit license plates (RULES.md)
 
 
 def crow_km(a: tuple, b: tuple) -> float:
-    """Khoang cach duong chim bay giua hai diem (vi do, kinh do), km."""
+    """Straight-line distance in km between two latitude and longitude pairs."""
     lat1, lon1, lat2, lon2 = map(math.radians, (*a, *b))
     h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
     return 12742 * math.asin(math.sqrt(h))
 
 
 def open_span(hours: Optional[dict], day: int) -> Optional[tuple]:
-    """Khoang phut mo cua cua mot diem trong ngay `day` (0 = thu Hai dau tuan). Dia chi tu nhan khong co gio mo cua."""
+    """The site's opening interval in minutes on day `day` (0 is Monday). Private addresses have no opening hours."""
     if hours is None:
         return day * DAY, (day + 1) * DAY
     weekday = day % 7
@@ -35,7 +35,7 @@ def open_span(hours: Optional[dict], day: int) -> Optional[tuple]:
 
 
 def last_open(hours: Optional[dict], until: int, since: int = 0) -> Optional[int]:
-    """Phut muon nhat <= until ma diem con mo cua, khong som hon since."""
+    """Latest minute in [since, until] when the site is open."""
     day = until // DAY
     while day >= 0 and (day + 1) * DAY > since:
         span = open_span(hours, day)
@@ -47,7 +47,7 @@ def last_open(hours: Optional[dict], until: int, since: int = 0) -> Optional[int
 
 
 def first_open(hours: Optional[dict], since: int, until: int) -> Optional[int]:
-    """Phut som nhat >= since ma diem mo cua, khong muon hon until."""
+    """Earliest minute in [since, until] when the site is open."""
     day = since // DAY
     while day * DAY <= until:
         span = open_span(hours, day)
@@ -59,7 +59,7 @@ def first_open(hours: Optional[dict], since: int, until: int) -> Optional[int]:
 
 
 def open_minutes(hours: Optional[dict], since: int, until: int) -> int:
-    """So phut diem mo cua trong [since, until]."""
+    """Number of minutes the site is open in [since, until]."""
     total, day = 0, since // DAY
     while day * DAY <= until:
         span = open_span(hours, day)
@@ -70,7 +70,7 @@ def open_minutes(hours: Optional[dict], since: int, until: int) -> int:
 
 
 class Atlas:
-    """Ban do va danh sach tai xe cua mot the gioi."""
+    """The world's map and driver roster."""
 
     def __init__(self, world_map: dict, roster: list):
         self.minutes = {(r["from"], r["to"]): r["minutes"] for r in world_map["roads"]}
@@ -85,7 +85,7 @@ class Atlas:
         self.drivers = len(roster)
 
     def drive(self, leg: dict) -> int:
-        """Phut lai tu diem lay den diem giao, cong lan sac neu xe dien can sac."""
+        """Driving minutes from pickup to delivery, including any required EV charging stop."""
         ends = (leg["pickup"]["placeId"], leg["delivery"]["placeId"])
         return self.minutes[ends] + (CHARGING if self.needs_charging(leg) else 0)
 
@@ -96,8 +96,8 @@ class Atlas:
 
     def last_pickup(self, leg: dict, deadline: int, pickup_closes: Optional[int] = None, delivery_closes: Optional[int] = None,
                     extra_minutes: int = 0) -> Optional[int]:
-        """Phut muon nhat lay xe ma xe van den kip `deadline`, theo gio mo cua hai dau.
-        pickup_closes / delivery_closes: gio dong cua that (phut trong ngay) neu ghi chu cua dealer noi som hon gio niem yet."""
+        """Latest pickup minute that still meets `deadline`, using opening hours at both sites.
+        pickup_closes and delivery_closes are the actual closing minutes of the day when the note gives earlier hours."""
         arrive = last_open(self.narrowed(leg["delivery"]["hours"], None, delivery_closes), deadline)
         if arrive is None:
             return None
@@ -108,7 +108,7 @@ class Atlas:
 
     @staticmethod
     def narrowed(hours: Optional[dict], opens: Optional[int], closes: Optional[int]) -> Optional[dict]:
-        """Gio mo cua sau khi ghi chu cua dealer thu hep lai."""
+        """Opening hours narrowed by the dealer's note."""
         if hours is None or (opens is None and closes is None):
             return hours
         out = dict(hours)
@@ -126,12 +126,12 @@ class Atlas:
         return out if out["opens"] < out["closes"] else hours
 
     def signs(self, request: dict, last_pickup: int, at: int, ready: Optional[int] = None) -> dict:
-        """Nhung dau hieu cho biet mot xe de hay kho tim tai xe kip gio, nhin tai phut `at`."""
+        """Features that indicate how hard it is to find a driver on time, measured at minute `at`."""
         leg = request["legs"][0]
         pickup, delivery = leg["pickup"]["placeId"], leg["delivery"]["placeId"]
         km = self.km[(pickup, delivery)]
         start = max(at, ready or 0, leg["pickup"]["window"]["from"] if leg["pickup"]["privateAddress"] else 0)
-        room = open_minutes(leg["pickup"]["hours"], start, last_pickup) / HOUR  # so gio diem lay xe con mo cua cho den han
+        room = open_minutes(leg["pickup"]["hours"], start, last_pickup) / HOUR  # hours the pickup site is still open before the last pickup
         return {
             "one": 1.0,
             "slack": math.log1p(max(0.0, (last_pickup - at) / HOUR)),

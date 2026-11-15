@@ -1,4 +1,4 @@
-"""Mot tuan da luu cua bot v4: tien di dau, theo loai xe, theo ngay, ghep xe, va gia cua don tre trong tuan."""
+"""Analyze a saved v4 week by car type, day, pairing, and the changing price of a late order."""
 import gzip, json, sys, collections, math
 from world import Atlas, DAY, HOUR
 

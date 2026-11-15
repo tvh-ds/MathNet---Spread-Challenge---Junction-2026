@@ -1,11 +1,11 @@
-"""Bot v1 cua doi: starter cua kit, doi dung ba quyet dinh.
+"""Team bot v1. Uses the starter kit with three decisions changed.
 
-1. Bao gia: mot boi so cua list price cho moi option du an toan; xe rui ro thi tu choi.
-2. Phi tai xe: mot muc co dinh cho moi gig (khong tang dan, de tai xe khong hoc cach cho).
-3. Sau canh bao deadline: nang phi dung mot lan.
+1. Quote a multiple of list price for each safe option and decline risky cars.
+2. Keep the opening fee fixed so drivers have no reason to wait for an increase.
+3. Raise the fee once after the deadline warning.
 
-Chay:  python dispatch.py --level 8 --seed test-1 --param price=1.5 --param fee=1.1
-Phan con lai (vong lap, ket noi lai, --final, --board) dung nguyen cua starter.
+Run:  python dispatch_v1.py --level 8 --seed test-1 --param price=1.5 --param fee=1.1
+The starter handles the game loop, reconnection, --final, and --board.
 """
 from __future__ import annotations
 
@@ -20,34 +20,34 @@ from spread.types import DeliveryOption, FeeStep, Order, PriceRequest
 
 @dataclass
 class Params:
-    price: float = 1.45        # gia bao = price x list price
-    fee: float = 1.15          # phi tai xe = fee x typical fee, giu nguyen tu luc dang
-    urgent_fee: float = 1.6    # phi sau canh bao deadline_close
-    min_slack_h: float = 8.0   # so gio toi thieu tu luc dealer tra loi den lan lay xe cuoi cung con kip han
-    max_km: float = 450.0      # tuyen dai hon thi tu choi
-    private_pickup: bool = False  # co nhan xe lay o dia chi tu nhan khong
-    trade_in: bool = False        # co nhan don hai xe khong
-    premium: bool = False         # co nhan xe premium khong (can tai xe kinh nghiem)
+    price: float = 1.45        # quote = price x list price
+    fee: float = 1.15          # opening driver fee = fee x typical fee
+    urgent_fee: float = 1.6    # fee after the deadline_close warning
+    min_slack_h: float = 8.0   # minimum hours from the dealer's answer to the last pickup that can arrive on time
+    max_km: float = 450.0      # decline lanes longer than this
+    private_pickup: bool = False  # accept pickups at private addresses
+    trade_in: bool = False        # accept two-car orders
+    premium: bool = False         # accept premium cars, which require experienced drivers
 
 
 P = Params()
-DECLINE = 4  # bao gia gap 4 lan list: khong bao gio thang, va khong mat thien cam cua dealer
+DECLINE = 4  # quote four times list price to decline without losing dealer goodwill
 
 
 def euros(cents: float) -> int:
-    """Lam tron ve euro chan, tinh bang cent."""
+    """Round to the nearest whole euro and return cents."""
     return int(cents / 100 + 0.5) * 100
 
 
 class Desk(starter.Desk):
     def __init__(self, world, level, now):
         super().__init__(world, level, now)
-        roads = world.client.map()["roads"]  # ban do khong ton token
+        roads = world.client.map()["roads"]  # the map costs no tokens
         self.minutes = {(r["from"], r["to"]): r["minutes"] for r in roads}
         self.km = {(r["from"], r["to"]): r["km"] for r in roads}
 
     def wanted(self, request: PriceRequest, option: DeliveryOption) -> bool:
-        """Co nen thang xe nay voi option nay khong: du thoi gian de mot tai xe nhan truoc canh bao."""
+        """Check whether there is enough time for a driver to take this option before the warning."""
         legs = request["legs"]
         if len(legs) > 1 and not P.trade_in:
             return False
@@ -65,7 +65,7 @@ class Desk(starter.Desk):
     def quote(self, request: PriceRequest) -> None:
         self.requests[request["id"]] = request
         options = request["options"]
-        if self.level <= 3:  # dealer bo qua gia: moi quote deu thang option dau o list price, tu choi = khong quote
+        if self.level <= 3:  # dealers ignore the quote price. Any quote wins the first option at list price. To decline, skip quoting
             if self.wanted(request, options[0]):
                 super().quote(request)
             return
@@ -88,10 +88,10 @@ def main() -> None:
     for item in args.param:
         name, _, value = item.partition("=")
         if name not in kinds:
-            sys.exit(f"Khong co tham so '{name}'. Co: {', '.join(kinds)}")
+            sys.exit(f"Unknown parameter '{name}'. Available parameters: {', '.join(kinds)}")
         setattr(P, name, value.lower() in ("1", "true", "yes") if isinstance(getattr(P, name), bool) else float(value))
     print(f"Params: {P}", flush=True)
-    starter.Desk = Desk  # starter choi voi ban Desk cua minh
+    starter.Desk = Desk  # run the starter with our Desk
     sys.argv = [sys.argv[0]] + rest
     starter.main()
 

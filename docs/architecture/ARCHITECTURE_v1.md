@@ -142,12 +142,14 @@ flowchart TD
   C --> R["replay_test.py: with the switch off,<br/>every action equals the old build's"]
   R --> S8["sweep.py on the 8 tuning weeks"]
   S8 --> Rule{"gain >= max(€250, 1.5 se)<br/>and no week under 91%?"}
-  Rule -- no --> X["Rejected, logged in NHAT_KY_THI_NGHIEM.md"]
+  Rule -- no --> X["Rejected, recorded in the experiment log"]
   Rule -- yes --> NW["sweep.py on weeks never played<br/>(night-N seeds)"]
   NW --> Rule2{"holds there?"}
   Rule2 -- no --> X
   Rule2 -- yes --> D["The default changes. Ranking round as a dress rehearsal"]
 ```
+
+The [experiment log](../research/EXPERIMENT_LOG.md) records the results and decisions.
 
 - **Paired weeks.** A seed gives the same week to the euro, so a difference on the same seeds is the change itself. `weeks.py` lists which weeks a change moved and by how much.
 - **Explore weeks** (`explore=true`): random prices 1.0 to 1.9 × list and random fees. They lose money on purpose; they are the data for the dealers' curve.

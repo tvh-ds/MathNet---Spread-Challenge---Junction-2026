@@ -1,5 +1,5 @@
-"""Kiem tra khoi dong lai: choi nua tuan (the gioi gia), dung, dung mot desk moi tu snapshot + lich su + so ghi (journal),
-roi so desk moi voi desk cu: bo hoc gia, do tin, so don, cac gig."""
+"""Test restart recovery. Play half a week in a mock world, stop, and rebuild the desk from the snapshot, history, and journal.
+Compare the new and old desks on price learning, trust, orders, and gigs."""
 import gzip, json, os, shutil, sys
 import dispatch, replay_test
 from dispatch import Desk
