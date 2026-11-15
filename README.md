@@ -1,5 +1,9 @@
 # Spread dispatch desk (Bahn challenge, Junction 2026)
 
+**[View the seven-slide presentation (PDF)](docs/presentation/spread-challenge.pdf)** · [Download the editable PowerPoint](docs/presentation/spread-challenge.pptx?raw=true)
+
+[![Opening slide. €19,965 final margin, 512 orders, 94.4% on time, and top 5 of 58 ranked teams. Click to view all seven slides.](docs/presentation/spread-challenge-preview.png)](docs/presentation/spread-challenge.pdf)
+
 A dispatch desk for the Spread world at level 8. One idea runs through it:
 
 > **A car costs its fee, plus its risk of arriving late, plus the driver it takes from the cars that already wait.**
